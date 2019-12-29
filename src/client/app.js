@@ -6,7 +6,7 @@ let vue = new Vue({
     my_id: '',
     my_name: '',
     my_type: '',
-    my_status: 'wating',
+    my_status: 'waiting',
     socket: socket,
     rooms: {},
     room_count: 0,
@@ -34,16 +34,7 @@ let vue = new Vue({
 
     socket.on('userList', (data) => {
       this.users = data
-      this.user_count = Object.keys(this.users).length
-
-      var on_wating = 0
-      var on_room = 0
-      for (user in this.users) {
-        if (this.users[user].roomId > 'a') on_room++
-        else on_wating++
-      }
-      this.on_waiting = on_wating
-      this.on_room = on_room
+			this.updateUserList(null)
     })
 
     socket.on('createRoom', (data) => {
@@ -57,11 +48,29 @@ let vue = new Vue({
       room.userCount++
 
       if (data.userId === this.my_id) this.my_status = 'in room ' + data.roomId
+
+			this.updateUserList(data)
     })
   },
   watch: {
 
   },
   methods: {
+		updateUserList (user) {
+			if (null !== user) {
+				this.users[user.userId].roomId = user.roomId
+			}
+
+      this.user_count = Object.keys(this.users).length
+
+      var on_wating = 0
+      var on_room = 0
+      for (user in this.users) {
+        if (this.users[user].roomId !== 'waiting') on_room++
+        else on_wating++
+      }
+      this.on_waiting = on_wating
+      this.on_room = on_room
+		}
   }
 })

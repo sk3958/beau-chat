@@ -15,11 +15,13 @@ class Room {
 
   addUser (user) {
     this.users[user.userId] = user
+		user.roomId = this.roomId
     this.userCount++
   }
 
   deleteUser (user) {
     if (this.users.hasOwnProperty(user.userId)) {
+			this.users[user.userId].roomId = ''
       delete this.users[user.userId]
       this.userCount--
     }
