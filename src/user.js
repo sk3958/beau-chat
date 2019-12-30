@@ -21,7 +21,7 @@ class User {
       userId: this.userId,
       userName: this.userName,
       userType: this.userType,
-      roomId: this.roomId > 'a' ? this.roomId : 'waiting'
+      roomId: this.roomId
     }
   }
 

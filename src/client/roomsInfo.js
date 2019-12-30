@@ -3,6 +3,7 @@ Vue.component('rooms-info', {
     socket: Object,
     rooms: Object,
     room_count: Number,
+		my_id: String,
     my_status: String
   },
   data: function () {
@@ -16,7 +17,7 @@ Vue.component('rooms-info', {
     <div id="rooms_info">
       <ul>
         <div>
-          <p>Current Room Count: {{ room_count }}&nbsp;&nbsp;My Status: {{ my_status }}</p>
+          <p>Current Room Count: {{ room_count }}&nbsp;&nbsp;My Status: {{ my_id }}({{ my_status }})</p>
           <label for="room-name">Room Name: </label>
           <input v-model="room_name" />
           <label for="room-desc">Room Description: </label>
@@ -44,7 +45,7 @@ Vue.component('rooms-info', {
     },
 
     enterRoom (roomId) {
-
+      this.socket.emit('enterRoom', { userId: this.my_id, roomId: roomId })
     }
   }
 })

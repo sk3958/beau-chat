@@ -2,9 +2,8 @@
 <html>
 
 <head>
-
   <meta charset="UTF-8">
-  <title>Find Student</title>
+  <title>Chat</title>
 
   <script type="text/javascript" src="./socket.io.js"></script>
   <script type="text/javascript" src="./vue.js"></script>
@@ -15,15 +14,18 @@
 <body>
   <div id="app">
     <div>
-      <rooms-info :rooms="rooms" :room_count="room_count" :socket="socket" :my_status="my_status"></rooms-info>
+      <rooms-info :rooms="rooms" :room_count="room_count" :socket="socket" :my_id="my_id" :my_status="my_status"></rooms-info>
     </div>
     <div>
       <users-info :users="users" :socket="socket" :user_count="user_count" :on_waiting="on_waiting" :on_room="on_room"></users-info>
     </div>
+		<div>
+			<my-video v-show="is_room" :my_id="my_id" :my_name="my_name" :is_room="is_room" @video_info="onVideoInfo"></my-video>
   </div>
 
   <script type="text/javascript" src="./roomsInfo.js"></script>
   <script type="text/javascript" src="./usersInfo.js"></script>
+  <script type="text/javascript" src="./myVideo.js"></script>
   <script type="text/javascript" src="./app.js"></script>
 </body>
 </html>

@@ -13,8 +13,14 @@ let vue = new Vue({
     users: {},
     user_count: 0,
     on_waiting: 0,
-    on_room: 0
+    on_room: 0,
+		is_room: false,
+		has_video: false,
+		stream: undefined,
+		video: undefined,
+		audio: undefined
   },
+
   created() {
     this.my_id = 'sk3958'
     this.my_name = 'soonkoo'
@@ -46,15 +52,15 @@ let vue = new Vue({
       var room = this.rooms[data.roomId]
       room.users[data.userId] = data
       room.userCount++
-
-      if (data.userId === this.my_id) this.my_status = 'in room ' + data.roomId
-
 			this.updateUserList(data)
+
+      if (data.userId === this.my_id) {
+				this.my_status = 'in room ' + data.roomId
+        this.is_room = true
+			}
     })
   },
-  watch: {
 
-  },
   methods: {
 		updateUserList (user) {
 			if (null !== user) {
@@ -71,6 +77,19 @@ let vue = new Vue({
       }
       this.on_waiting = on_wating
       this.on_room = on_room
+		},
+
+		onVideoInfo (hasVideo, stream, video, audio) {
+			this.has_video = hasVideo
+			if (hasVideo) {
+				this.stream = stream
+				this.video = video
+				this.audio = audio
+			} else {
+				this.stream = undefined
+				this.video = undefined
+				this.audio = undefined
+			}
 		}
   }
 })
