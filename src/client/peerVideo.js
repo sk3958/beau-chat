@@ -59,8 +59,7 @@ var PeerVideo = Vue.component('PeerVideo', {
 			recvPC: undefined,
 			peerVideo: undefined,
 			sendDataChannel: undefined,
-			recvDataChannel: undefined,
-			offerOptions: { offerToReceiveAudio: 1, offerToReceiveVideo: 1 }
+			recvDataChannel: undefined
     }
   },
 
@@ -110,7 +109,7 @@ var PeerVideo = Vue.component('PeerVideo', {
 
 		async sendOffer () {
 			try {
-				let desc = await this.sendPC.createOffer(this.offerOptions)
+				let desc = await this.sendPC.createOffer()
 				await this.sendPC.setLocalDescription(desc)
 				let data = {
 					message : 'offer',
