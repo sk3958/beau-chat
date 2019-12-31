@@ -41,11 +41,11 @@ Vue.component('rooms-info', {
 
   methods: {
     createRoom () {
-      this.socket.emit('createRoom', { roomName: this.room_name, roomDesc: this.room_desc })
+      this.socket.emit('createRoom', JSON.stringify({ roomName: this.room_name, roomDesc: this.room_desc }))
     },
 
     enterRoom (roomId) {
-      this.socket.emit('enterRoom', { userId: this.my_id, roomId: roomId })
+      this.socket.emit('enterRoom', JSON.stringify({ userId: this.my_id, roomId: roomId }))
     }
   }
 })

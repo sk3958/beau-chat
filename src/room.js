@@ -67,6 +67,15 @@ class Room {
     for (var roomId in Room.roomList) obj[roomId] = Room.roomList[roomId].info
     return obj
   }
+
+  static isRoom (room) {
+    if (undefined === room || null === room) return false
+    return (room.hasOwnProperty('roomId') &&
+      room.hasOwnProperty('roomName') &&
+      room.hasOwnProperty('roomDesc') &&
+      room.hasOwnProperty('users') &&
+      room.hasOwnProperty('userCount'))
+  }
 }
 
 module.exports = Room

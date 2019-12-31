@@ -28,7 +28,7 @@ io.on('connection', (socket) => {
       io,
       socket,
       packet.data[0],
-      packet.data[1] ? packet.data[1] : null
+      packet.data[1] ? JSON.parse(packet.data[1]) : null
     )
   })
 })

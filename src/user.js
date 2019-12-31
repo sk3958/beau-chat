@@ -5,6 +5,7 @@ class User {
     this.userId = userId
     this.userName = userName
     this.userType = userType
+    this.socket = socket
     this.socketId = socket.id
     this.status = 0
     this.roomId = '' 
@@ -39,6 +40,17 @@ class User {
     var obj = {}
     for (var userId in User.userList) obj[userId] = User.userList[userId].info
     return obj
+  }
+
+  static isUser (user) {
+    if (undefined === user || null === user) return false
+    return (user.hasOwnProperty('userId') &&
+      user.hasOwnProperty('userName') &&
+      user.hasOwnProperty('userType') &&
+      user.hasOwnProperty('socket') &&
+      user.hasOwnProperty('socketId') &&
+      user.hasOwnProperty('status') &&
+      user.hasOwnProperty('roomId'))
   }
 }
 

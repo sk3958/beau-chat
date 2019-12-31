@@ -1,9 +1,9 @@
 Vue.component('my-video', {
   template: `
     <div id="video">
-		  <p>{{ my_id }} {{ my_name }}</p>
-		  <video id="myVideo" autoplay>
-			  You have no camera or this browser does not support video tag.
+			<p>{{ my_id }} {{ my_name }}</p>
+			<video id="myVideo" playsinline autoplay muted>
+				You have no camera or this browser does not support video tag.
 			</video>
     </div>
   `,
@@ -38,13 +38,10 @@ Vue.component('my-video', {
   methods: {
 		start () {
 			if (navigator.getUserMedia) {
-			  navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+					navigator.mediaDevices.getUserMedia({ video: true, audio: true })
 					.then(stream => {
 						this.myVideo.srcObject = stream
-						const video = stream.getVideoTracks()
-						const audio = stream.getAudioTracks()
-
-						this.$emit('video_info', true, stream, video, audio)
+						this.$emit('video_info', true, stream)
 						})
 					.catch(err => {
 						this.$emit('video_info', false)
