@@ -2,7 +2,7 @@ Vue.component('my-video', {
   template: `
     <div id="video">
 			<p>{{ my_id }} {{ my_name }}</p>
-			<video id="myVideo" playsinline autoplay muted>
+			<video id="myVideo" playsinline muted>
 				You have no camera or this browser does not support video tag.
 			</video>
     </div>
@@ -16,7 +16,8 @@ Vue.component('my-video', {
 
   data: function () {
     return {
-			myVideo: undefined
+			myVideo: undefined,
+			stream: undefined 
     }
   },
 
@@ -28,7 +29,8 @@ Vue.component('my-video', {
 	},
 
 	mounted () {
-		this.myVideo = document.querySelector('#myVideo')
+		this.myVideo = document.getElementById('myVideo')
+		this.getVideoStream()
 	},
 
   beforeDestroy () {
@@ -36,18 +38,41 @@ Vue.component('my-video', {
 	},
 
   methods: {
-		start () {
-			if (navigator.getUserMedia) {
-					navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-					.then(stream => {
-						this.myVideo.srcObject = stream
-						this.$emit('video_info', true, stream)
-						})
-					.catch(err => {
-						this.$emit('video_info', false)
+		getVideoStream () {
+			if (navigator.getUserMedia && navigator.appVersion.indexOf('SamsungBrowser') >= 0) {
+				navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+					.then((stream) => {
+						/*this.myVodeo.srcObject = stream */
+						//document.getElementById('myVideo').srcObject = stream
+						this.stream = stream
+						this.$emit('video_info', true, this.stream)
+					})
+					.catch((err) => {
+						this.myVideo.autoplay = false
+						this.myVideo.loop = true
+						this.myVideo.src = './chrome.mp4'
+						var fps = 0
+						this.stream = this.myVideo.captureStream(fps)
+						this.$emit('video_info', true, this.stream)
+						// this.$emit('video_info', false)
 					})
 			} else {
-				this.$emit('video_info', false)
+					this.myVideo.autoplay = false
+					this.myVideo.loop = true
+					this.myVideo.src = './chrome.mp4'
+					var fps = 0
+					this.stream = this.myVideo.captureStream(fps)
+					this.$emit('video_info', true, this.stream)
+				// this.$emit('video_info', false)
+			}
+		},
+
+		start () {
+			try {
+				if (this.myVideo.src === '') this.myVideo.srcObject = this.stream
+				this.myVideo.play()
+			} catch(e) {
+				window.alert(e)
 			}
 		},
 
@@ -55,6 +80,7 @@ Vue.component('my-video', {
 			try {
 				this.myVideo.pause()
 			} catch(e) {
+				window.alert(e)
 			}
 		}
   }

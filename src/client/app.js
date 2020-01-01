@@ -16,7 +16,7 @@ let vue = new Vue({
     on_room: 0,
 		is_room: false,
 		has_video: false,
-		stream: undefined,
+		stream: {},
     on_enter: false,
     my_room: { users: {} },
     my_room_id: '',
@@ -168,6 +168,7 @@ let vue = new Vue({
 		onVideoInfo (hasVideo, stream) {
 			this.has_video = hasVideo
     console.log('my video is ' + this.has_video)
+    console.log(stream)
 			if (hasVideo) {
 				this.stream = stream
 			} else {

@@ -55,11 +55,9 @@ var PeerVideo = Vue.component('PeerVideo', {
 
   data: function () {
     return {
-			sendPC: undefined,
-			recvPC: undefined,
+			pc: undefined,
 			peerVideo: undefined,
-			sendDataChannel: undefined,
-			recvDataChannel: undefined
+			dataChannel: undefined
     }
   },
 
@@ -70,8 +68,7 @@ var PeerVideo = Vue.component('PeerVideo', {
 	},
 
   beforeDestroy () {
-		this.sendPC.close()
-		this.recvPC.close()
+		this.pc.close()
 	},
 
   methods: {
@@ -107,46 +104,18 @@ var PeerVideo = Vue.component('PeerVideo', {
 			this.socket.emit('pcSignaling', JSON.stringify(data))
 		},
 
-		async sendOffer () {
-			try {
-				let desc = await this.sendPC.createOffer()
-				await this.sendPC.setLocalDescription(desc)
-				let data = {
-					message : 'offer',
-					desc: desc,
-					from: this.my_id,
-					to: this.peer_id
-				}
-				this.sendSignalingData(data)
-			} catch (e) {
-			}
-		},
-
-		createPC () {
-			if (undefined === this.sendPC) this.sendPC = new RTCPeerConnection(pcConfig)
-			this.sendDataChannel = this.sendPC.createDataChannel('DataChnnel')
+		async createPC () {
+			if (undefined === this.pc) this.pc = new RTCPeerConnection(pcConfig)
 			if (this.has_video) {
-				this.stream.forEach(track => this.sendPC.addTrack(track, this.stream))
+				// this.stream.forEach(track => this.pc.addTrack(track, this.stream))
+				this.pc.addTrack(this.stream.getVideoTracks()[0], this.stream)
+				this.pc.addTrack(this.stream.getAudioTracks()[0], this.stream)
 			}
 
-			if (undefined === this.recvPC) this.recvPC = new RTCPeerConnection(pcConfig)
-
-			this.sendPC.onicecandidate = (event) => {
+			this.pc.onicecandidate = (event) => {
 				if (!event.candidate) return
 				let data = {
 					message: 'iceCandidate',
-					origin: 'offer',
-					desc: event.candidate,
-					from: this.my_id,
-					to: this.peer_id
-				}
-				this.sendSignalingData(data)
-			}
-			this.recvPC.onicecandidate = (event) => {
-				if (!event.candidate) return
-				let data = {
-					message: 'iceCandidate',
-					origin: 'answer',
 					desc: event.candidate,
 					from: this.my_id,
 					to: this.peer_id
@@ -154,40 +123,47 @@ var PeerVideo = Vue.component('PeerVideo', {
 				this.sendSignalingData(data)
 			}
 
-			this.sendPC.onconnectionstatechange = (event) => {
-				console.log('sendPC state')
-				console.log(event)
-			}
-			this.recvPC.onconnectionstatechange = (event) => {
-				console.log('recvPC state')
+			this.pc.onconnectionstatechange = (event) => {
 				console.log(event)
 			}
 
-			this.recvPC.ontrack = (event) => {
+			this.pc.ontrack = (event) => {
 console.log(event)
 				if (this.peerVideo.srcObject !== event.streams[0]) {
 					this.peerVideo.srcObject = event.streams[0]
 				}
 			}
-			this.recvPC.ondatachannel = (event) => {
-				this.recvDataChannel = event.channel
-				this.recvDataChannel.onmessage = (event) => {
-					console.log('Receive Data from ' + this.peer_id + ' = ' + event.data)
-				}
-setTimeout(() => {
-	this.sendDataChannel.send('Hello I am ' + this.my_id)
-}, 1000)
-console.log(this.recvDataChannel)
-			}
 
-			if (this.offer) this.sendOffer()
+			if (this.offer) {
+				this.dataChannel = this.pc.createDataChannel('DataChnnel')
+				try {
+					let desc = await this.pc.createOffer()
+					await this.pc.setLocalDescription(desc)
+					let data = {
+						message : 'offer',
+						desc: desc,
+						from: this.my_id,
+						to: this.peer_id
+					}
+					this.sendSignalingData(data)
+				} catch (e) {
+				}
+			} else {
+				this.pc.ondatachannel = (event) => {
+					this.dataChannel = event.channel
+					this.dataChannel.onmessage = (event) => {
+						console.log('Receive Data from ' + this.peer_id + ' = ' + event.data)
+					}
+console.log(this.dataChannel)
+			}
+			}
 		},
 
 		async createAnswer(data) {
 			try {
-				await this.recvPC.setRemoteDescription(new RTCSessionDescription(data.desc))
-				let desc = await this.recvPC.createAnswer()
-				await this.recvPC.setLocalDescription(desc)
+				await this.pc.setRemoteDescription(new RTCSessionDescription(data.desc))
+				let desc = await this.pc.createAnswer()
+				await this.pc.setLocalDescription(desc)
 				let answer = {
 					message: 'answer',
 					desc: desc,
@@ -195,21 +171,18 @@ console.log(this.recvDataChannel)
 					to: this.peer_id
 				}
 				this.sendSignalingData(answer)
-
-				this.sendOffer()
 			} catch(e) {
 console.log(e)
 			}
 		},
 
 		async acceptAnswer (data) {
-			await this.sendPC.setRemoteDescription(new RTCSessionDescription(data.desc))
+			await this.pc.setRemoteDescription(new RTCSessionDescription(data.desc))
 		},
 
 		async addIceCandidate (data) {
 			try {
-				if (data.origin === 'offer') await this.recvPC.addIceCandidate(new RTCIceCandidate(data.desc))
-				else await this.sendPC.addIceCandidate(new RTCIceCandidate(data.desc))
+				await this.pc.addIceCandidate(new RTCIceCandidate(data.desc))
 			} catch(e) {
 			}
 		}

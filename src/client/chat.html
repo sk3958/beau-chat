@@ -17,7 +17,6 @@
       <rooms-info :rooms="rooms" :room_count="room_count" :socket="socket" :my_id="my_id" :my_status="my_status"></rooms-info>
     </div>
     <div>
-
       <users-info :users="users" :socket="socket" :user_count="user_count" :on_waiting="on_waiting" :on_room="on_room"></users-info>
     </div>
     <div v-show="is_room" id="chat_room" ref="chat_room">
@@ -25,14 +24,10 @@
       <div>
         <my-video :my_id="my_id" :my_name="my_name" :is_room="is_room" @video_info="onVideoInfo"></my-video>
       </div>
-      <!-- <div v-if="is_room" v-for="user in my_room.users">
-        <peer-video v-if="user.userId != my_id" :socket="socket" :my_id="my_id" :peer_id="user.userId"
-          :stream="stream" :video="video" :audio="audio" :offer="on_enter"></peer-video>
-      </div> -->
-  </div> 
+    </div> 
   </div>
 
-  <script type="text/javascript" src="./adapter.js" async></script>
+  <script type="text/javascript" src="./adapter.js"></script>
   <script type="text/javascript" src="./roomsInfo.js"></script>
   <script type="text/javascript" src="./usersInfo.js"></script>
   <script type="text/javascript" src="./myVideo.js"></script>
