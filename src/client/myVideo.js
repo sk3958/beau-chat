@@ -53,6 +53,7 @@ Vue.component('my-video', {
 						this.myVideo.src = './chrome.mp4'
 						var fps = 0
 						this.stream = this.myVideo.captureStream(fps)
+console.log(this.stream)
 						this.$emit('video_info', true, this.stream)
 						// this.$emit('video_info', false)
 					})

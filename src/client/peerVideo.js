@@ -48,7 +48,7 @@ var PeerVideo = Vue.component('PeerVideo', {
 		my_id: String,
 		peer_id: String,
 		peer_name: String,
-		stream: Object,
+		stream: MediaStream,
 		offer: Boolean,
 		has_video: Boolean
   },
