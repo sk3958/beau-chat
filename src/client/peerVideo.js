@@ -69,6 +69,7 @@ var PeerVideo = Vue.component('PeerVideo', {
 
   beforeDestroy () {
 		this.pc.close()
+		this.pc = undefined
 	},
 
   methods: {
@@ -107,9 +108,9 @@ var PeerVideo = Vue.component('PeerVideo', {
 		async createPC () {
 			if (undefined === this.pc) this.pc = new RTCPeerConnection(pcConfig)
 			if (this.has_video) {
-				// this.stream.forEach(track => this.pc.addTrack(track, this.stream))
-				this.pc.addTrack(this.stream.getVideoTracks()[0], this.stream)
-				this.pc.addTrack(this.stream.getAudioTracks()[0], this.stream)
+				this.stream.getTracks().forEach(track => this.pc.addTrack(track, this.stream))
+				// this.pc.addTrack(this.stream.getVideoTracks()[0], this.stream)
+				// this.pc.addTrack(this.stream.getAudioTracks()[0], this.stream)
 			}
 
 			this.pc.onicecandidate = (event) => {
@@ -147,23 +148,26 @@ console.log(event)
 					}
 					this.sendSignalingData(data)
 				} catch (e) {
+					this.log(e)
 				}
 			} else {
 				this.pc.ondatachannel = (event) => {
 					this.dataChannel = event.channel
 					this.dataChannel.onmessage = (event) => {
-						console.log('Receive Data from ' + this.peer_id + ' = ' + event.data)
+						this.log('Receive Data from ' + this.peer_id + ' = ' + event.data)
 					}
-console.log(this.dataChannel)
 			}
 			}
 		},
 
 		async createAnswer(data) {
+this.log('createAnswer')
 			try {
 				await this.pc.setRemoteDescription(new RTCSessionDescription(data.desc))
+this.log('setRemoteDescriptioni')
 				let desc = await this.pc.createAnswer()
 				await this.pc.setLocalDescription(desc)
+this.log('setLocalDescriptioni')
 				let answer = {
 					message: 'answer',
 					desc: desc,
@@ -172,7 +176,7 @@ console.log(this.dataChannel)
 				}
 				this.sendSignalingData(answer)
 			} catch(e) {
-console.log(e)
+				this.log(e)
 			}
 		},
 
@@ -185,6 +189,10 @@ console.log(e)
 				await this.pc.addIceCandidate(new RTCIceCandidate(data.desc))
 			} catch(e) {
 			}
+		},
+
+		log (msg) {
+			// this.$root.myLog(msg)
 		}
   }
 })

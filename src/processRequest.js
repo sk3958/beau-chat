@@ -12,6 +12,9 @@ var processRequest = function (io, socket, url, data) {
     case 'addUser':
       addUser(io, socket, data)
       break
+    case 'deleteUser':
+      deleteUser(io, socket)
+      break
     case 'roomList':
       sendRoomList(socket)
       break
@@ -36,7 +39,11 @@ var processRequest = function (io, socket, url, data) {
     case 'pcSignaling':
       relayData('pcSignaling', data)
       break
+    case 'log':
+      console.log(data.msg)
+      break
     default:
+			console.log(url)
       break
   }
 }
@@ -78,7 +85,7 @@ function createRoom (io, socket, data) {
       user.socket.emit('requestFail', JSON.stringify({ message: 'Cannot create room when in room.'}))
       return false
     }
-    var room = new Room(data.roomName, data.roomDesc)
+    var room = new Room(data.roomName, data.roomDesc, data.maxUser)
     io.sockets.emit('createRoom', JSON.stringify(room.info))
     enterRoom(io, socket, { roomId: room.roomId, userId: user.userId })
   }
@@ -88,7 +95,7 @@ function enterRoom (io, socket, data) {
   var user = User.getUser(data.userId)
   if (User.isUser(user)) {
     var room = Room.getRoom(data.roomId)
-    if (Room.isRoom(room) && Room.MAX_MEMBER === room.userCount) {
+    if (Room.isRoom(room) && room.maxUser === room.userCount) {
       socket.emit('requestFail', JSON.stringify({ message: 'This room is full.' }))
       return false
     }

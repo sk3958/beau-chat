@@ -10,18 +10,20 @@ let vue = new Vue({
     socket: socket,
     rooms: {},
     room_count: 0,
+		room_maxs: [ 2, 3, 4, 5, 6 ],
     users: {},
     user_count: 0,
     on_waiting: 0,
     on_room: 0,
 		is_room: false,
 		has_video: false,
-		stream: {},
+		stream: undefined,
     on_enter: false,
     my_room: { users: {} },
     my_room_id: '',
     my_room_name: '',
-    my_room_member_count: 0
+    my_room_member_count: 0,
+		peerVideos: []
   },
 
   created() {
@@ -34,11 +36,17 @@ let vue = new Vue({
 
     window.onbeforeunload = () => {
       socket.emit('deleteUser')
+			socket.disconnect()
     }
 
     socket.on('addUser', (data) => {
       var user = JSON.parse(data)
       this.users[user.userId] = user
+      this.updateUserList()
+    })
+    socket.on('deleteUser', (data) => {
+      var user = JSON.parse(data)
+      delete this.users[user.userId]
       this.updateUserList()
     })
     socket.on('roomList', (data) => {
@@ -85,6 +93,7 @@ let vue = new Vue({
       }
       let peerVideo = Vue.extend(PeerVideo)
       let instance = new peerVideo({ propsData: param })
+			this.peerVideos.push(instance)
       instance.$mount()
       this.$refs.chat_room.appendChild(instance.$el)
       instance.initialize()
@@ -93,6 +102,16 @@ let vue = new Vue({
     removePeerVideo (userId) {
       var elem = document.getElementById(userId).parentElement
       this.$refs.chat_room.removeChild(elem)
+
+			this.peerVideos.forEach((peerVideo, index) => {
+				if (peerVideo.peer_id === userId) {
+					peerVideo.peer_id = ''
+					peerVideo.my_id = ''
+					peerVideo.pc.close()
+					peerVideo = undefined
+					this.peerVideos.splice(index, 1)
+				}
+			})
     },
 
     enterRoom (data) {
@@ -167,8 +186,6 @@ let vue = new Vue({
 
 		onVideoInfo (hasVideo, stream) {
 			this.has_video = hasVideo
-    console.log('my video is ' + this.has_video)
-    console.log(stream)
 			if (hasVideo) {
 				this.stream = stream
 			} else {
@@ -178,6 +195,12 @@ let vue = new Vue({
 
     showMessage (message) {
       console.log(message)
-    }
-  },
+    },
+
+		myLog (msg) {
+			console.log(msg)
+			if (/Android/i.test(navigator.userAgent))
+				this.socket.emit('log', JSON.stringify({ msg: msg }))
+		}
+  }
 })

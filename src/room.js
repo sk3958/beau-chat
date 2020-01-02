@@ -1,14 +1,14 @@
 class Room {
-  static MAX_MEMBER = 4
   static roomList = {}
   static roomCount = 0
 
-  constructor (roomName, roomDesc) {
+  constructor (roomName, roomDesc, maxUser) {
     this.roomId = 'room_' + ++Room.roomCount
     this.roomName = roomName
     this.roomDesc = roomDesc
     this.users = {}
     this.userCount = 0
+		this.maxUser = maxUser
 
     Room.roomList[this.roomId] = this
   }
@@ -35,6 +35,7 @@ class Room {
     obj.roomName = this.roomName
     obj.roomDesc = this.roomDesc
     obj.userCount = this.userCount
+		obj.maxUser = this.maxUser
     obj.users = {}
     for (var userId in this.users) {
       obj.users[userId] = this.users[userId].info
@@ -59,7 +60,7 @@ class Room {
   }
 
   static getRoomByUser (user) {
-    return getRoomByUserId(user.userId)
+    return this.getRoomByUserId(user.userId)
   }
 
   static getRoomsInfo () {
@@ -74,7 +75,8 @@ class Room {
       room.hasOwnProperty('roomName') &&
       room.hasOwnProperty('roomDesc') &&
       room.hasOwnProperty('users') &&
-      room.hasOwnProperty('userCount'))
+      room.hasOwnProperty('userCount') &&
+		  room.hasOwnProperty('maxUser'))
   }
 }
 
