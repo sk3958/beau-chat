@@ -38,8 +38,8 @@ const pcConfig = {
 
 var PeerVideo = Vue.component('PeerVideo', {
   template: `
-    <div>
-			<video v-bind:id="peer_id" playsinline autoplay></video>
+    <div class="video-container">
+			<video v-bind:id="peer_id" controls playsinline autoplay></video>
     </div>
   `,
 

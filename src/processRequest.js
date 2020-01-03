@@ -79,6 +79,7 @@ function sendUserList (socket) {
 }
 
 function createRoom (io, socket, data) {
+console.log(data)
   var user = User.getUserBySocketId(socket.id)
   if (User.isUser(user)) {
     if ('' !== user.roomId) {
@@ -87,6 +88,7 @@ function createRoom (io, socket, data) {
     }
     var room = new Room(data.roomName, data.roomDesc, data.maxUser)
     io.sockets.emit('createRoom', JSON.stringify(room.info))
+console.log(room.info)
     enterRoom(io, socket, { roomId: room.roomId, userId: user.userId })
   }
 }
@@ -99,6 +101,7 @@ function enterRoom (io, socket, data) {
       socket.emit('requestFail', JSON.stringify({ message: 'This room is full.' }))
       return false
     }
+console.log(user.info)
     room.addUser(user)
     user.roomId = room.roomId
     io.sockets.emit('enterRoom', JSON.stringify(user.info))

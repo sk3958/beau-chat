@@ -78,6 +78,7 @@ let vue = new Vue({
     socket.on('requestFail', (data) => {
       this.showMessage(JSON.parse(data).message)
     })
+
   },
 
   methods: {
@@ -121,6 +122,7 @@ let vue = new Vue({
 			this.updateUserList(data)
 
       if (data.userId === this.my_id) {
+				// this.launchFullScreen(document.body)
         this.my_status = 'in room ' + data.roomId
         this.is_room = true
         this.my_room = room
@@ -151,6 +153,7 @@ let vue = new Vue({
         this.my_room = undefined
         this.my_room_id = ''
         this.my_room_name = ''
+				// this.exitFullScreen()
       } else if (data.roomId === this.my_room_id) {
         this.removePeerVideo(data.user.userId)
         this.my_room_member_count--
@@ -201,6 +204,28 @@ let vue = new Vue({
 			console.log(msg)
 			if (/Android/i.test(navigator.userAgent))
 				this.socket.emit('log', JSON.stringify({ msg: msg }))
+		},
+
+		launchFullScreen (element) { 
+			if (element.requestFullScreen) {
+				element.requestFullScreen()
+			} else if (element.mozRequestFullScreen) {
+				element.mozRequestFullScreen()
+			} else if (element.webkitRequestFullScreen) {
+				element.webkitRequestFullScreen()
+			}
+		},
+
+		exitFullScreen () { 
+			if (document.exitFullscreen) {
+				document.exitFullscreen()
+			} else if (document.mozExitFullscreen) {
+				document.mozExitFullscreen()
+			} else if (document.webkitExitFullscreen) {
+				document.webkitExitFullscreen()
+			} else {
+				window.alert('cannot cancelFullscreen')
+			}
 		}
   }
 })

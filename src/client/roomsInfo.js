@@ -16,32 +16,38 @@ Vue.component('rooms-info', {
   },
 
   template: `
-    <div id="rooms_info">
-      <ul>
-        <div>
-          <p>Current Room Count: {{ room_count }}&nbsp;&nbsp;My Status: {{ my_id }}({{ my_status }})</p>
-          <label for="room-name">Room Name:</label>
-          <input v-model="room_name" name="room-name"/>
-          <label for="room-desc">Room Description</label>
-          <input v-model="room_desc" name="room-desc"/>
-					<label for="max-user">Max User:</label> 
-					<select v-model="max_user" name="max-user">
-					  <option v-for="value in room_maxs" :value="value"> {{ value }} people </option>
-					</select>
-          <li>
-            <a href="#" v-on:click="createRoom()">Create Room</a>
-          </li>
-        </div>
-        <span><br></span>
-        <div>
-          <li v-for="room in rooms" :key="room.memberCount">
-            <p>{{ room.roomId }} ({{ room.roomName }})&nbsp;Participant : {{ room.userCount }}/{{ room.maxUser }}</p>
-            <p>{{ room.roomDesc }}</p>
-            <p v-for="user in room.users">{{ user.userName }}({{ user.userId }}),</p>
-            <a href="#" v-on:click="enterRoom(room.roomId)">Enter Room</a>
-          </li>
-        </div>
-      </ul>
+		<div id="rooms_info">
+			<div style="text-align: right;">My Status: {{ my_id }}({{ my_status }})</div>
+			<h1>Rooms Information</h1>
+			<p>Current Room Count: {{ room_count }}</p>
+			<div>
+			  <table><thead><tr>
+				  <th>Room ID</th>
+				  <th>Room name</th>
+				  <th>Room Description</th>
+				  <th>Participants</th>
+				  <th>Enterance</th>
+				</tr></thead>
+				<tbody><tr v-for="room in rooms" :key="room.memberCount">
+					<td>{{ room.roomId }}</td>
+					<td>{{ room.roomName }}</td>
+					<td>{{ room.roomDesc }}</td>
+					<td>{{ room.userCount }}/{{ room.maxUser }}</td>
+					<td><button type="button" :disabled="room.userCount === room.maxUser" :click="enterRoom(room.roomId)">Enter Room</button></td>
+				</tr></tbody></table>
+			</div>
+			<div>
+			  <br><h2>Make Room</h2>
+				<label for="room-name">Room Name</label>
+				<input v-model="room_name" name="room-name"/>
+				<label for="room-desc">Description</label>
+				<input v-model="room_desc" name="room-desc"/>
+				<label for="max-user">Max User</label> 
+				<select v-model="max_user" name="max-user">
+					<option v-for="value in room_maxs" :value="value"> {{ value }} people </option>
+				</select>
+				<button type="button"  v-on:click="createRoom()">Create Room</button>
+			</div>
     </div>
   `,
 

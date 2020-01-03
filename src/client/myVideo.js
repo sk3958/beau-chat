@@ -1,8 +1,7 @@
 Vue.component('my-video', {
   template: `
     <div id="video">
-			<p>{{ my_id }} {{ my_name }}</p>
-			<video id="myVideo" playsinline muted>
+			<video id="myVideo" controls playsinline muted>
 				You have no camera or this browser does not support video tag.
 			</video>
     </div>

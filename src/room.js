@@ -66,6 +66,7 @@ class Room {
   static getRoomsInfo () {
     var obj = {}
     for (var roomId in Room.roomList) obj[roomId] = Room.roomList[roomId].info
+console.log(obj)
     return obj
   }
 
