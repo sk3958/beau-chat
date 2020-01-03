@@ -1,4 +1,36 @@
-body {
+html
+{
+	min-height: 100%;
+}
+
+body
+{
+	font-family: Verdana, sans-serif, Helvetica Neue, Helvetica;
+	font-size: 100%;
+	min-height: 100%;
+	overflow-y: scroll; 
+	-ms-text-size-adjust: 100%; 
+	-webkit-text-size-adjust: 100%; 
+	-ms-text-size-adjust: 100%;
+	-webkit-text-size-adjust: 100%;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale; 
+	text-rendering: optimizeLegibility;
+	color: #373737;
+	background-color: #f4f4f4;
+	background-color: #ffd3d9;
+	/*background-image: linear-gradient(to bottom, #c0b283, #dcd0c0);
+	background-image: linear-gradient(to bottom, #77c9d4, #57bc90);
+	background-image: linear-gradient(to bottom, #dcd0c0, #bab0a0);
+	background-image: linear-gradient(to bottom, #c0b283, #f1f1f1);*/
+}
+
+#chat_room {
+  width: 100%;
+  background-color: black;
+  display: grid;
+  grid-gap: 10px;
+  grid-template-columns: repeat(3, 1fr);
 }
 
 video {

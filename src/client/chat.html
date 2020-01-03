@@ -19,8 +19,10 @@
     <div>
       <users-info :users="users" :socket="socket" :user_count="user_count" :on_waiting="on_waiting" :on_room="on_room"></users-info>
     </div>
-    <div v-show="is_room" id="chat_room" ref="chat_room">
-      <a href="#" v-on:click="sendLeaveRoom">Leave Room</a>
+    <div id="chat_room" v-show="is_room" id="chat_room" ref="chat_room">
+      <div>
+        <a href="#" v-on:click="sendLeaveRoom">Leave Room</a>
+      </div>
       <div>
         <my-video :my_id="my_id" :my_name="my_name" :is_room="is_room" @video_info="onVideoInfo"></my-video>
       </div>
