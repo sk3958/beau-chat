@@ -23,13 +23,16 @@ let vue = new Vue({
     my_room_id: '',
     my_room_name: '',
     my_room_member_count: 0,
-		peerVideos: []
+    peerVideos: [],
+    log: undefined,
+    dummy: 0
   },
 
   created() {
     this.my_id = 'M_' + Math.floor(Math.random() * 1000000)
     this.my_name = 'soonkoo'
     this.my_type = '99'
+    this.log = this.myLog
     socket.emit('addUser', JSON.stringify({ userId: this.my_id, userName: this.my_name, userType: this.my_type }))
     socket.emit('roomList')
     socket.emit('userList')
@@ -37,6 +40,10 @@ let vue = new Vue({
     window.onbeforeunload = () => {
       socket.emit('deleteUser')
 			socket.disconnect()
+    }
+
+    window.onerror = (event, source, lineno, colno, error) => {
+      this.myLog({ event: event, source: source, lineno: lineno, colno: colno, error: error })
     }
 
     socket.on('addUser', (data) => {
@@ -75,9 +82,16 @@ let vue = new Vue({
     socket.on('leaveRoom', (data) => {
       this.leaveRoom(JSON.parse(data))
     })
+    socket.on('invitedRoom', (data) => {
+      this.invitedRoom(JSON.parse(data))
+    })
+    socket.on('refusedInvite', (data) => {
+      this.refusedInvite(JSON.parse(data))
+    })
     socket.on('requestFail', (data) => {
       this.showMessage(JSON.parse(data).message)
     })
+
   },
 
   methods: {
@@ -89,7 +103,8 @@ let vue = new Vue({
         peer_name: user.userName,
         stream: this.stream,
         offer: this.on_enter,
-        has_video: this.has_video
+        has_video: this.has_video,
+        log: this.log
       }
       let peerVideo = Vue.extend(PeerVideo)
       let instance = new peerVideo({ propsData: param })
@@ -117,10 +132,10 @@ let vue = new Vue({
     enterRoom (data) {
       var room = this.rooms[data.roomId]
       room.users[data.userId] = data
-      room.userCount++
-			this.updateUserList(data)
+      room.userCount = room.userCount + 1
 
       if (data.userId === this.my_id) {
+				this.launchFullScreen(document.body)
         this.my_status = 'in room ' + data.roomId
         this.is_room = true
         this.my_room = room
@@ -132,13 +147,13 @@ let vue = new Vue({
           if (userId !== this.my_id) this.addPeerVideo(room.users[userId])
         }
         this.on_enter = false
-      } else {
-        if (data.roomId === this.my_room_id) this.addPeerVideo(data)
-      }
-
-      if (room.roomId === this.my_room.roomId) {
+      } else if (data.roomId === this.my_room_id) {
+        this.addPeerVideo(data)
         this.my_room_member_count = room.userCount
       }
+
+      this.updateUserList(data)
+      this.updateRoomList()
     },
 
     leaveRoom (data) {
@@ -151,6 +166,7 @@ let vue = new Vue({
         this.my_room = undefined
         this.my_room_id = ''
         this.my_room_name = ''
+				this.exitFullScreen()
       } else if (data.roomId === this.my_room_id) {
         this.removePeerVideo(data.user.userId)
         this.my_room_member_count--
@@ -158,8 +174,25 @@ let vue = new Vue({
 
       var room = this.rooms[data.roomId]
       delete room.users[data.user.userId]
-      room.userCount--
+      room.userCount = room.userCount - 1
       this.updateUserList(data.user)
+    },
+
+    invitedRoom (data) {
+      let user = data.user
+      let room = data.room
+      let message = `Invited from ${user.userName}(${user.userId}). Accept?`
+
+      if (this.confirmMessage(message)) {
+        this.socket.emit('enterRoom', JSON.stringify({ userId: this.my_id, roomId: room.roomId }))
+      } else {
+        this.socket.emit('refuseInvite', JSON.stringify({ inviteId: user.userId }))
+      }
+    },
+
+    refusedInvite (data) {
+      let message = `${data.userName}(${data.userId}) refused your invitation.`
+      this.showMessage(message)
     },
 
     sendLeaveRoom () {
@@ -182,7 +215,11 @@ let vue = new Vue({
       }
       this.on_waiting = on_waiting
       this.on_room = on_room
-		},
+    },
+    
+    updateRoomList () {
+      this.dummy++
+    },
 
 		onVideoInfo (hasVideo, stream) {
 			this.has_video = hasVideo
@@ -194,13 +231,42 @@ let vue = new Vue({
     },
 
     showMessage (message) {
-      console.log(message)
+      window.alert(message)
+    },
+
+    confirmMessage (message) {
+      return window.confirm(message)
     },
 
 		myLog (msg) {
 			console.log(msg)
-			if (/Android/i.test(navigator.userAgent))
-				this.socket.emit('log', JSON.stringify({ msg: msg }))
+			if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent))
+				this.socket.emit('log', JSON.stringify({ userId: this.my_id, msg: msg }))
+		},
+
+		launchFullScreen (element) { 
+			if (element.requestFullScreen) {
+				element.requestFullScreen()
+			} else if (element.mozRequestFullScreen) {
+				element.mozRequestFullScreen()
+			} else if (element.webkitRequestFullScreen) {
+				element.webkitRequestFullScreen()
+			}
+		},
+
+		exitFullScreen () {
+      var el = document.fullscreenElement || document.mozFullscreenElement || document.webkitFullscreenElement
+      if (null === el) return
+
+      if (document.exitFullscreen) {
+        document.exitFullscreen()
+      } else if (document.mozExitFullscreen) {
+        document.mozExitFullscreen()
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen()
+      } else {
+        window.alert('cannot cancelFullscreen')
+      }
 		}
   }
 })

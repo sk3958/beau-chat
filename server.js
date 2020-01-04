@@ -18,8 +18,8 @@ app.get('/', (req, res) => {
   // need check user using redis
   res.sendFile(__dirname + '/src/client/chat.html')
 })
-server.listen(3001, () => {
-  console.log('Listening on port 3001')
+server.listen(3002, () => {
+  console.log('Listening on port 3002')
 })
 
 io.on('connection', (socket) => {
@@ -31,4 +31,8 @@ io.on('connection', (socket) => {
       packet.data[1] ? JSON.parse(packet.data[1]) : null
     )
   })
+})
+
+process.on('uncaughtException', (error) => {
+  console.log(error.stack);
 })

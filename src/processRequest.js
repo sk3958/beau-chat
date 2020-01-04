@@ -31,7 +31,7 @@ var processRequest = function (io, socket, url, data) {
       leaveRoom(io, socket, data)
       break
     case 'inviteRoom':
-      inviteRoom(io, socket, data)
+      inviteRoom(socket, data)
       break
     case 'refuseInvite':
       refuseInvite(io, socket, data)
@@ -40,7 +40,7 @@ var processRequest = function (io, socket, url, data) {
       relayData('pcSignaling', data)
       break
     case 'log':
-      console.log(data.msg)
+      debugClient(data)
       break
     default:
 			console.log(url)
@@ -125,8 +125,8 @@ function inviteRoom (socket, data) {
   var invitedUser = User.getUser(data.invitedId)
   var user = User.getUserBySocketId(socket.id)
   if (invitedUser.userId && user.userId) {
-    var room = Room.getRoom(data.roomId)
-    socket.broadcast.to(invitedUser.socketId).emit('inviteRoom', JSON.stringify({ user: user.info, room: room.info }))
+    var room = Room.getRoomByUser(user)
+    socket.broadcast.to(invitedUser.socketId).emit('invitedRoom', JSON.stringify({ user: user.info, room: room.info }))
   }
 }
 
@@ -134,7 +134,7 @@ function refuseInvite (socket, data) {
   var inviteUser = User.getUser(data.inviteId)
   var user = User.getUserBySocketId(socket.id)
   if (inviteUser.userId && user.userId) {
-    socket.broadcast.to(inviteUser.socketId).emit('refuseInvite', JSON.stringify(user.info))
+    socket.broadcast.to(inviteUser.socketId).emit('refusedInvite', JSON.stringify(user.info))
   }
 }
 
@@ -146,6 +146,27 @@ function relayData (message, data) {
     }
   } catch(e) {
   }
+}
+
+function debugClient (data, depth = 0) {
+  console.log(data)
+  /* let space = ''
+  for (let i = 0; i < depth; i++) space += '  '
+
+  if (typeof data === 'object') {
+    console.log(space + '{')
+    for (var key in Object.keys(data)) {
+      if (typeof Object.values(data)[key] === 'object') {
+        console.log(space + '  ' + Object.keys(data)[key] + ': ' + (Object.values(data)[key]))
+        debugClient(Object.values(data)[key], ++depth)
+      } else {
+        console.log(space + '  ' + Object.keys(data)[key] + ': ' + Object.values(data)[key])
+      }
+    }
+    console.log(space + '}')
+  } else {
+    console.log(data)
+  } */
 }
 
 module.exports = processRequest

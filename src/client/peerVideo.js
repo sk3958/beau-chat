@@ -38,8 +38,8 @@ const pcConfig = {
 
 var PeerVideo = Vue.component('PeerVideo', {
   template: `
-    <div>
-			<video v-bind:id="peer_id" playsinline autoplay></video>
+    <div class="video-container">
+			<video v-bind:id="peer_id" controls playsinline autoplay></video>
     </div>
   `,
 
@@ -50,7 +50,8 @@ var PeerVideo = Vue.component('PeerVideo', {
 		peer_name: String,
 		stream: MediaStream,
 		offer: Boolean,
-		has_video: Boolean
+		has_video: Boolean,
+		log: Function
   },
 
   data: function () {
@@ -125,11 +126,9 @@ var PeerVideo = Vue.component('PeerVideo', {
 			}
 
 			this.pc.onconnectionstatechange = (event) => {
-				console.log(event)
 			}
 
 			this.pc.ontrack = (event) => {
-console.log(event)
 				if (this.peerVideo.srcObject !== event.streams[0]) {
 					this.peerVideo.srcObject = event.streams[0]
 				}
@@ -161,13 +160,10 @@ console.log(event)
 		},
 
 		async createAnswer(data) {
-this.log('createAnswer')
 			try {
 				await this.pc.setRemoteDescription(new RTCSessionDescription(data.desc))
-this.log('setRemoteDescriptioni')
 				let desc = await this.pc.createAnswer()
 				await this.pc.setLocalDescription(desc)
-this.log('setLocalDescriptioni')
 				let answer = {
 					message: 'answer',
 					desc: desc,
@@ -188,11 +184,8 @@ this.log('setLocalDescriptioni')
 			try {
 				await this.pc.addIceCandidate(new RTCIceCandidate(data.desc))
 			} catch(e) {
+				this.log(e)
 			}
-		},
-
-		log (msg) {
-			// this.$root.myLog(msg)
 		}
   }
 })

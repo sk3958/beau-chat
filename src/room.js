@@ -76,7 +76,7 @@ class Room {
       room.hasOwnProperty('roomDesc') &&
       room.hasOwnProperty('users') &&
       room.hasOwnProperty('userCount') &&
-		  room.hasOwnProperty('maxUser'))
+      room.hasOwnProperty('maxUser'))
   }
 }
 
