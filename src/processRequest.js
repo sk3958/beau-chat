@@ -149,7 +149,7 @@ function relayData (message, data) {
 }
 
 function debugClient (data, depth = 0) {
-  console.log(data)
+  console.log('debugClient : ', data)
   /* let space = ''
   for (let i = 0; i < depth; i++) space += '  '
 

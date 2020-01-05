@@ -2,6 +2,16 @@ let express = require('express')
 let app = express()
 let https = require('https')
 let fs = require('fs')
+const uuid = require('uuid/v4')
+const session = require('express-session')
+const redis = require('redis')
+const redisStore = require('connect-redis')(session)
+const checkUser = require('./src/checkUser')
+
+const redisClient = redis.createClient()
+redisClient.on('error', (err) => {
+  console.log('Redis error : ', err)
+})
 
 let options = {
   key: fs.readFileSync('./keys/private_key.pem'),
@@ -9,14 +19,24 @@ let options = {
 }
 
 app.use(express.static(__dirname + '/src/client'))
+app.use(session({
+  genid: (req) => {
+    return uuid()
+  },
+  store: new redisStore({ host: 'localhost', port: process.env.REDIS_PORT || 6379, client: redisClient }),
+  secret: process.env['SESSION_SECRET'],
+  resave: false,
+  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 },
+  saveUninitialized: true
+}))
+
 let server = https.createServer(options, app)
 let io = require('socket.io')(server)
 let wildcard = require('socketio-wildcard')()
 io.use(wildcard)
 
 app.get('/', (req, res) => {
-  // need check user using redis
-  res.sendFile(__dirname + '/src/client/chat.html')
+  checkUser(req, res)
 })
 server.listen(3002, () => {
   console.log('Listening on port 3002')
