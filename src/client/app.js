@@ -29,9 +29,12 @@ let vue = new Vue({
   },
 
   created() {
-    this.my_id = 'M_' + Math.floor(Math.random() * 1000000)
-    this.my_name = 'soonkoo'
-    this.my_type = '99'
+    this.my_id = info.userId
+    console.log('my_id = ', this.my_id)
+    this.my_name = info.userName
+    console.log('my_name = ', this.my_name)
+    this.my_type = info.userType
+    console.log('my_type = ', this.my_type)
     this.log = this.myLog
     socket.emit('addUser', JSON.stringify({ userId: this.my_id, userName: this.my_name, userType: this.my_type }))
     socket.emit('roomList')

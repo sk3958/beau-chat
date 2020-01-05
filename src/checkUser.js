@@ -1,19 +1,24 @@
 const redis = require('redis')
+const Cryptr = require('cryptr')
+const cryptr = new Cryptr(process.env.SESSION_SECRET)
 
 async function setUser (req, res) {
   let session = req.session
-  if (session.logined) {
-    res.sendFile(__dirname + '/client/chat.html')
+  if (session.logined && session.user_id.length > 0 && session.user_kind.length === 2) {
+    res.render('chat.html', session)
     return true
   }
 
   const redisClient = redis.createClient(process.env.REDIS_PORT || 6379)
   try {
-    const { user_id, tempKey } = req.params
-    if (undefined === user_id || undefined === tempKey) {
+    const { param1, param2 } = req.params
+    if (undefined === param1 || undefined === param2) {
       res.sendStatus(404)
       return false
     }
+
+    user_id = cryptr.decrypt(param1)
+    tempKey = cryptr.decrypt(param2)
 
     const info = await redisClient.get(user_id)
     const userInfo = JSON.parse(info)
@@ -25,7 +30,7 @@ async function setUser (req, res) {
 
       await redisClient.del(user_id)
 
-      res.sendFile(__dirname + '/client/chat.html')
+      res.render('chat.html', session)
       return true
     }
   } catch(e) {

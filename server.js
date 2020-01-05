@@ -1,7 +1,8 @@
-let express = require('express')
-let app = express()
-let https = require('https')
-let fs = require('fs')
+const express = require('express')
+const app = express()
+const https = require('https')
+const fs = require('fs')
+const ejs = require('ejs')
 const uuid = require('uuid/v4')
 const session = require('express-session')
 const redis = require('redis')
@@ -18,6 +19,9 @@ let options = {
   cert: fs.readFileSync('./keys/beauedu.crt')
 }
 
+app.set('views', __dirname + '/src/client')
+app.set('view engine', 'ejs')
+app.engine('html', ejs.renderFile)
 app.use(express.static(__dirname + '/src/client'))
 app.use(session({
   genid: (req) => {
