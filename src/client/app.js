@@ -25,7 +25,14 @@ let vue = new Vue({
     my_room_member_count: 0,
     peerVideos: [],
     log: undefined,
-    dummy: 0
+    dummy: 0,
+		alert_title: '',
+		alert_message: '',
+		cancel_label: 'Cancel',
+		confirm_label: 'OK',
+		is_confirm_alert: false,
+		alerts: [],
+		on_alert: false
   },
 
   created() {
@@ -40,10 +47,14 @@ let vue = new Vue({
     socket.emit('roomList')
     socket.emit('userList')
 
-    window.onbeforeunload = () => {
-      socket.emit('deleteUser')
-			socket.disconnect()
-    }
+    window.addEventListener('beforeunload', (e) => {
+			this.log('beforeunload')
+			e.preventDefault()
+			e.returnValue = ''
+
+      //socket.emit('deleteUser')
+			//socket.disconnect()
+		})
 
     window.onerror = (event, source, lineno, colno, error) => {
       this.myLog({ event: event, source: source, lineno: lineno, colno: colno, error: error })
@@ -82,6 +93,10 @@ let vue = new Vue({
     socket.on('enterRoom', (data) => {
       this.enterRoom(JSON.parse(data))
     })
+    socket.on('doneReadyForNewMember', (data) => {
+			var user = this.my_room.users[JSON.parse(data).from]
+			if (undefined !== user) this.addPeerVideo(user, true)
+    })
     socket.on('leaveRoom', (data) => {
       this.leaveRoom(JSON.parse(data))
     })
@@ -92,34 +107,33 @@ let vue = new Vue({
       this.refusedInvite(JSON.parse(data))
     })
     socket.on('requestFail', (data) => {
-      this.showMessage(JSON.parse(data).message)
+      this.showMessage('requestFail', 'Notification', JSON.parse(data).message)
     })
 
   },
 
   methods: {
-    addPeerVideo (user) {
+    addPeerVideo (user, needOffer) {
       let param = {
         socket: this.socket,
         my_id: this.my_id,
         peer_id: user.userId,
         peer_name: user.userName,
         stream: this.stream,
-        offer: this.on_enter,
-        has_video: this.has_video,
-        log: this.log
+        offer: needOffer,
+        has_video: this.has_video
       }
       let peerVideo = Vue.extend(PeerVideo)
       let instance = new peerVideo({ propsData: param })
 			this.peerVideos.push(instance)
       instance.$mount()
-      this.$refs.chat_room.appendChild(instance.$el)
+      this.$refs.peers.appendChild(instance.$el)
       instance.initialize()
     },
 
     removePeerVideo (userId) {
       var elem = document.getElementById(userId).parentElement
-      this.$refs.chat_room.removeChild(elem)
+      this.$refs.peers.removeChild(elem)
 
 			this.peerVideos.forEach((peerVideo, index) => {
 				if (peerVideo.peer_id === userId) {
@@ -145,13 +159,8 @@ let vue = new Vue({
         this.my_room_id = room.roomId
         this.my_room_name = room.roomName
 
-        this.on_enter = true
-        for (userId in room.users) {
-          if (userId !== this.my_id) this.addPeerVideo(room.users[userId])
-        }
-        this.on_enter = false
       } else if (data.roomId === this.my_room_id) {
-        this.addPeerVideo(data)
+        this.addPeerVideo(data, false)
         this.my_room_member_count = room.userCount
       }
 
@@ -183,19 +192,14 @@ let vue = new Vue({
 
     invitedRoom (data) {
       let user = data.user
-      let room = data.room
       let message = `Invited from ${user.userName}(${user.userId}). Accept?`
 
-      if (this.confirmMessage(message)) {
-        this.socket.emit('enterRoom', JSON.stringify({ userId: this.my_id, roomId: room.roomId }))
-      } else {
-        this.socket.emit('refuseInvite', JSON.stringify({ inviteId: user.userId }))
-      }
+      this.confirmMessage('invitedRoom', 'Confirm', message, 'Refuse', 'Accept', data)
     },
 
     refusedInvite (data) {
       let message = `${data.userName}(${data.userId}) refused your invitation.`
-      this.showMessage(message)
+      this.showMessage('refusedInvite', message)
     },
 
     sendLeaveRoom () {
@@ -233,13 +237,86 @@ let vue = new Vue({
 			}
     },
 
-    showMessage (message) {
-      window.alert(message)
+    showMessage (origin, title, message) {
+			var msg = {
+        origin: origin,
+				title: title,
+				message: message,
+				isConfirm: false,
+				cancelLabel: '',
+				confirmLabel: 'OK',
+				data: null
+			}
+			this.alerts.push(msg)
+			this.showMessageBox ()
     },
 
-    confirmMessage (message) {
-      return window.confirm(message)
+    confirmMessage (origin, title, message, cancelLabel = 'Cancel', confirmLabel = 'OK', data = null) {
+			var msg = {
+        origin: origin,
+				title: title,
+				message: message,
+				isConfirm: true,
+				cancelLabel: cancelLabel,
+				confirmLabel: confirmLabel,
+				data: data
+			}
+			this.alerts.push(msg)
+			this.showMessageBox ()
     },
+
+		showMessageBox () {
+			if (1 > this.alerts.length) {
+				this.on_alert = false
+				return false
+			}
+
+			var msg = this.alerts[0]
+			this.alert_title = msg.title
+			this.alert_message = msg.message
+			this.cancel_label = msg.cancelLabel
+			this.confirm_label = msg.confirmLabel
+			this.is_confirm_alert = msg.isConfirm
+			this.on_alert = true
+		},
+
+		onAlertConfirm () {
+			this.on_alert = false
+			var msg = this.alerts.shift()
+
+			if (!msg.isConfirm) {
+				this.showMessageBox()
+				return false
+			}
+
+      switch(msg.origin) {
+				case 'invitedRoom':
+					this.socket.emit('acceptInvite',
+						JSON.stringify({ inviteId: msg.data.user.userId, invitedId: this.my_id }))
+					break
+				default:
+					break
+			}
+
+			this.showMessageBox
+			return true
+		},
+
+		onAlertCancel () {
+			this.on_alert = false
+			var msg = this.alerts.shift()
+
+      switch(msg.origin) {
+				case 'invitedRoom':
+        this.socket.emit('refuseInvite', JSON.stringify({ inviteId: msg.data.user.userId }))
+					break
+				default:
+					break
+			}
+
+			this.showMessageBox
+			return true
+		},
 
 		myLog (msg) {
 			console.log(msg)

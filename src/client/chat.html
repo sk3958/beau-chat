@@ -31,6 +31,7 @@
         :user_count="user_count"
         :on_waiting="on_waiting"
         :on_room="on_room"
+				@show_message="showMessage"
         ref="usersInfo">
       </users-info>
     </div>
@@ -40,10 +41,23 @@
 				<button type="button" v-on:click="sendLeaveRoom">Leave Room</button>
 			</div>
 			<div id="chat_room" ref="chat_room">
+				<div id="peers" ref="peers">
+				</div>
 				<div class="video-container">
 					<my-video :my_id="my_id" :my_name="my_name" :is_room="is_room" :log="log" @video_info="onVideoInfo"></my-video>
 				</div>
 			</div>
+		</div>
+		<div v-show="on_alert" class="alert-container">
+			<alert
+				:alert_title="alert_title"
+				:alert_message="alert_message"
+				:cancel_label="cancel_label"
+				:confirm_label="confirm_label"
+				:is_confirm_alert="is_confirm_alert"
+				@on_alert_cancel="onAlertCancel"
+				@on_alert_confirm="onAlertConfirm">
+			</alert>
 		</div>
   </div>
   <script>
@@ -58,6 +72,7 @@
   <script type="text/javascript" src="./usersInfo.js?after"></script>
   <script type="text/javascript" src="./myVideo.js?after"></script>
   <script type="text/javascript" src="./peerVideo.js?after"></script>
+  <script type="text/javascript" src="./alert.js?after"></script>
   <script type="text/javascript" src="./app.js?after"></script>
   <script type="text/javascript" src="./ga.js"></script>
 </body>

@@ -5,8 +5,7 @@ Vue.component('users-info', {
     user_count: Number,
     on_waiting: Number,
     on_room: Number,
-    my_id: String,
-    log: Function
+    my_id: String
   },
 
   template: `
@@ -36,8 +35,8 @@ Vue.component('users-info', {
 
   methods: {
     inviteRoom(userId) {
-      this.socket.emit('createRoom', JSON.stringify({ roomName: 'Private', roomDesc: 'Private', maxUser: 2 }))
       this.socket.emit('inviteRoom', JSON.stringify({ invitedId: userId }))
+			this.$emit('show_message', 'inviteRoom', 'Notification', 'Has sent the request.')
     }
   }
 })

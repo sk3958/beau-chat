@@ -38,7 +38,7 @@ const pcConfig = {
 
 var PeerVideo = Vue.component('PeerVideo', {
   template: `
-    <div class="video-container">
+    <div class="peer_video-container">
 			<video v-bind:id="peer_id" controls playsinline autoplay></video>
     </div>
   `,
@@ -50,8 +50,7 @@ var PeerVideo = Vue.component('PeerVideo', {
 		peer_name: String,
 		stream: MediaStream,
 		offer: Boolean,
-		has_video: Boolean,
-		log: Function
+		has_video: Boolean
   },
 
   data: function () {
@@ -102,6 +101,11 @@ var PeerVideo = Vue.component('PeerVideo', {
 			}
 		},
 
+		sendDoneReadyForNewMember () {
+			this.socket.emit('doneReadyForNewMember',
+				JSON.stringify({ from: this.my_id, to: this.peer_id }))
+		},
+
 		sendSignalingData (data) {
 			this.socket.emit('pcSignaling', JSON.stringify(data))
 		},
@@ -136,26 +140,29 @@ var PeerVideo = Vue.component('PeerVideo', {
 
 			if (this.offer) {
 				this.dataChannel = this.pc.createDataChannel('DataChnnel')
-				try {
-					let desc = await this.pc.createOffer()
-					await this.pc.setLocalDescription(desc)
-					let data = {
-						message : 'offer',
-						desc: desc,
-						from: this.my_id,
-						to: this.peer_id
-					}
-					this.sendSignalingData(data)
-				} catch (e) {
-					this.log(e)
-				}
+				this.createOffer()
 			} else {
 				this.pc.ondatachannel = (event) => {
 					this.dataChannel = event.channel
-					this.dataChannel.onmessage = (event) => {
-						this.log('Receive Data from ' + this.peer_id + ' = ' + event.data)
-					}
+				}
+
+				this.sendDoneReadyForNewMember()
 			}
+		},
+
+		async createOffer () {
+			try {
+				let desc = await this.pc.createOffer()
+				await this.pc.setLocalDescription(desc)
+				let data = {
+					message : 'offer',
+					desc: desc,
+					from: this.my_id,
+					to: this.peer_id
+				}
+				this.sendSignalingData(data)
+			} catch (e) {
+				this.log(e)
 			}
 		},
 

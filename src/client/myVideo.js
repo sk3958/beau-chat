@@ -40,7 +40,7 @@ Vue.component('my-video', {
   methods: {
 		getVideoStream () {
 this.log(navigator.appVersion)
-			if (navigator.getUserMedia /* && navigator.appVersion.indexOf('SamsungBrowser') >= 0 */) {
+			if (navigator.getUserMedia && navigator.appVersion.indexOf('SamsungBrowser') >= 0) {
 				navigator.mediaDevices.getUserMedia({ video: true, audio: true })
 					.then((stream) => {
 						this.stream = stream

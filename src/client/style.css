@@ -151,22 +151,118 @@ td {
 }
 
 #chat_room {
-	display: grid;
-	grid-gap: 5px;
-	padding: 20px;
-	grid-template-columns: repeat(2, 1fr);
+	align: center;
 }
 #chat_header button {
 	margin: auto;
 }
 
+#peers {
+	width: 100%;
+}
+
+.peer_video-container {
+	float: center;
+	margin: 5px 5px;
+}
+
 .video-container {
+	width: 100%;
 	text-align: center;
-	width: 45%;
 }
 
 video {
   background-color: #373737;
 	width: 360px;
 	height: 480px;
+}
+
+.alert-container {
+  z-index:999;
+  padding-top:100px;
+  position:fixed;
+  left:0;
+  top:0;
+  width:100%;
+  height:100%;
+  overflow:auto;
+  background-color: rgb(0,0,0);
+  background-color: rgba(0,0,0,0.2);
+}
+
+.alert {
+  /*position: relative;*/
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  padding: 20px;
+  background-color: #333333;
+  border-radius: 5px;
+  width: 25%;
+  min-width: 400px;
+  /*transition: all 5s ease-in-out;*/
+}
+.alert-error {
+  /*position: relative;*/
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  padding: 20px;
+  background-color: #cc0000;
+  border-radius: 5px;
+  width: 25%;
+  min-width: 400px;
+  /*transition: all 5s ease-in-out;*/
+}
+.alert-success {
+  /*position: relative;*/
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  padding: 20px;
+  background-color: #008000;
+  border-radius: 5px;
+  width: 25%;
+  min-width: 400px;
+  /*transition: all 5s ease-in-out;*/
+}
+.alert-notify {
+  /*position: relative;*/
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  padding: 20px;
+  background-color: #ff7777;
+  border-radius: 5px;
+  width: 25%;
+  min-width: 400px;
+  /*transition: all 5s ease-in-out;*/
+}
+
+.alert-container h2 {
+  margin-top: 0;
+  color: #ffffff;
+  font-family: Tahoma, Arial, sans-serif;
+}
+.alert-container .alert-close {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  transition: all 200ms;
+  font-size: 30px;
+  font-weight: bold;
+  text-decoration: none;
+  color: #ffffff;
+}
+.alert-container .alert-close:hover {
+  color: #333;
+}
+.alert-container .alert-content {
+  max-height: 30%;
+  overflow: auto;
+  color: #ffffff;
 }

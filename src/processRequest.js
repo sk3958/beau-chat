@@ -27,14 +27,21 @@ var processRequest = function (io, socket, url, data) {
     case 'enterRoom':
       enterRoom(io, socket, data)
       break
+    case 'doneReadyForNewMember':
+console.log(data)
+      relayData('doneReadyForNewMember', data)
+      break
     case 'leaveRoom':
       leaveRoom(io, socket, data)
       break
     case 'inviteRoom':
       inviteRoom(socket, data)
       break
+    case 'acceptInvite':
+      acceptInvite(io, socket, data)
+      break
     case 'refuseInvite':
-      refuseInvite(io, socket, data)
+      refuseInvite(socket, data)
       break
     case 'pcSignaling':
       relayData('pcSignaling', data)
@@ -125,9 +132,26 @@ function inviteRoom (socket, data) {
   var invitedUser = User.getUser(data.invitedId)
   var user = User.getUserBySocketId(socket.id)
   if (invitedUser.userId && user.userId) {
-    var room = Room.getRoomByUser(user)
-    socket.broadcast.to(invitedUser.socketId).emit('invitedRoom', JSON.stringify({ user: user.info, room: room.info }))
+    socket.broadcast.to(invitedUser.socketId).emit('invitedRoom', JSON.stringify({ user: user.info }))
   }
+}
+
+function acceptInvite (io, socket, data) {
+  var inviteUser = User.getUser(data.inviteId)
+  var invitedUser = User.getUser(data.invitedId)
+
+	if (User.isUser(inviteUser) && '' !== inviteUser.roomId) {
+    socket.emit('requestFail', JSON.stringify({ message: `${inviteUser.userName}(${inviteUser.userId}) is in another room already.` }))
+		return false
+	}
+
+	createRoom(io, inviteUser.socket, {
+		roomName: 'Private',
+		roomDesc: 'Private',
+		maxUser: 2
+	})
+
+	enterRoom(io, socket, { roomId: inviteUser.roomId, userId: data.invitedId })
 }
 
 function refuseInvite (socket, data) {
