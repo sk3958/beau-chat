@@ -28,7 +28,6 @@ var processRequest = function (io, socket, url, data) {
       enterRoom(io, socket, data)
       break
     case 'doneReadyForNewMember':
-console.log(data)
       relayData('doneReadyForNewMember', data)
       break
     case 'leaveRoom':
