@@ -4,7 +4,7 @@ Vue.component('alert', {
 			<h2>{{ alert_title }}</h2>
 			<div id="alert_content" class="alert-content">{{ alert_message }}
 			</div>
-			<div class="alert_response">
+			<div class="alert-response">
 			  <button v-show="is_confirm_alert" type="button" v-on:click="this.onAlertCancel">{{ cancel_label }}</button>
 			  <button type="button" v-on:click="this.onAlertConfirm">{{ confirm_label }}</button>
 			</div>

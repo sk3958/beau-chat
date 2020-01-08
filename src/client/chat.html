@@ -17,7 +17,7 @@
         :my_id="my_id"
         :my_status="my_status"
         :room_maxs="room_maxs"
-        :log="log"
+        @log="log"
         :dummy="dummy"
         ref="roomsInfo">
       </rooms-info>
@@ -32,19 +32,20 @@
         :on_waiting="on_waiting"
         :on_room="on_room"
 				@show_message="showMessage"
+        @log="log"
         ref="usersInfo">
       </users-info>
     </div>
 		<div v-show="is_room" id="chat_room_container">
 			<div id="room_header">
-				<span class="info">{{ my_room_name }}({{ my_room_id }})</span>
+				 {{ my_room_name }}({{ my_room_id }})
 				<button type="button" v-on:click="sendLeaveRoom">Leave Room</button>
 			</div>
 			<div id="chat_room" ref="chat_room">
 				<div id="peers" ref="peers">
 				</div>
 				<div class="video-container">
-					<my-video :my_id="my_id" :my_name="my_name" :is_room="is_room" :log="log" @video_info="onVideoInfo"></my-video>
+					<my-video :my_id="my_id" :my_name="my_name" :is_room="is_room" @log="log" @video_info="onVideoInfo"></my-video>
 				</div>
 			</div>
 		</div>
@@ -55,6 +56,7 @@
 				:cancel_label="cancel_label"
 				:confirm_label="confirm_label"
 				:is_confirm_alert="is_confirm_alert"
+        @log="log"
 				@on_alert_cancel="onAlertCancel"
 				@on_alert_confirm="onAlertConfirm">
 			</alert>

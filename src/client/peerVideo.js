@@ -68,8 +68,10 @@ var PeerVideo = Vue.component('PeerVideo', {
 	},
 
   beforeDestroy () {
-		this.pc.close()
-		this.pc = undefined
+		/*if (undefined !== this.pc) {
+			this.pc.close()
+		  this.pc = undefined
+		}*/
 	},
 
   methods: {

@@ -48,12 +48,16 @@ let vue = new Vue({
     socket.emit('userList')
 
     window.addEventListener('beforeunload', (e) => {
-			this.log('beforeunload')
 			e.preventDefault()
 			e.returnValue = ''
 
-      //socket.emit('deleteUser')
-			//socket.disconnect()
+			if (this.is_room) this.sendLeaveRoom()
+      socket.emit('deleteUser')
+			socket.disconnect()
+		})
+
+    window.addEventListener('keydown', (e) => {
+			this.myLog(e)
 		})
 
     window.onerror = (event, source, lineno, colno, error) => {
@@ -139,7 +143,10 @@ let vue = new Vue({
 				if (peerVideo.peer_id === userId) {
 					peerVideo.peer_id = ''
 					peerVideo.my_id = ''
-					peerVideo.pc.close()
+					if (undefined !== peerVideo.pc) {
+						peerVideo.pc.close()
+						peerVideo.pc = undefined
+					}
 					peerVideo = undefined
 					this.peerVideos.splice(index, 1)
 				}
@@ -169,17 +176,7 @@ let vue = new Vue({
     },
 
     leaveRoom (data) {
-      if (data.user.userId === this.my_id) {
-        for (userId in this.my_room.users) {
-          if (userId !== this.my_id) this.removePeerVideo(userId)
-        }
-        this.my_status = 'waiting'
-        this.is_room = false
-        this.my_room = undefined
-        this.my_room_id = ''
-        this.my_room_name = ''
-				this.exitFullScreen()
-      } else if (data.roomId === this.my_room_id) {
+      if (data.roomId === this.my_room_id && data.user.userId !== this.my_id) {
         this.removePeerVideo(data.user.userId)
         this.my_room_member_count--
       }
@@ -188,6 +185,7 @@ let vue = new Vue({
       delete room.users[data.user.userId]
       room.userCount = room.userCount - 1
       this.updateUserList(data.user)
+			this.updateRoomList()
     },
 
     invitedRoom (data) {
@@ -199,10 +197,23 @@ let vue = new Vue({
 
     refusedInvite (data) {
       let message = `${data.userName}(${data.userId}) refused your invitation.`
-      this.showMessage('refusedInvite', message)
+      this.showMessage('refusedInvite', 'Sorry', message)
     },
 
+		clearMyRoom () {
+			for (userId in this.my_room.users) {
+				if (userId !== this.my_id) this.removePeerVideo(userId)
+			}
+			this.my_status = 'waiting'
+			this.is_room = false
+			this.my_room = undefined
+			this.my_room_id = ''
+			this.my_room_name = ''
+			this.exitFullScreen()
+		},
+
     sendLeaveRoom () {
+			this.clearMyRoom()
       this.socket.emit('leaveRoom', JSON.stringify({ userId: this.my_id }))
     },
 

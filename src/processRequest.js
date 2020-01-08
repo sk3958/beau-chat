@@ -28,7 +28,6 @@ var processRequest = function (io, socket, url, data) {
       enterRoom(io, socket, data)
       break
     case 'doneReadyForNewMember':
-console.log(data)
       relayData('doneReadyForNewMember', data)
       break
     case 'leaveRoom':
@@ -66,8 +65,7 @@ function deleteUser (io, socket) {
   if (User.isUser(user)) {
     var room = Room.getRoomByUser(user)
     if (null !== room) {
-      room.deleteUser(user)
-      if (0 === room.userCount) io.sockets.emit('deleteRoom', JSON.stringify(room.info))
+			leaveRoom(io, socket, user)
     }
 
     user.destroy()

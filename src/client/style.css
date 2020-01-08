@@ -17,6 +17,7 @@ body {
 
 #app {
 	width: 960px;
+	width: 100%;
 	margin: auto;
 }
 
@@ -153,12 +154,22 @@ td {
 #chat_room {
 	align: center;
 }
-#chat_header button {
-	margin: auto;
+#room_header {
+	font-size: 17px;
+	font-weight: 600;
+	padding-top: 20px;
+	margin: 10px 10px;
+}
+#room_header button {
+	padding: 0;
+	margin: 0;
 }
 
 #peers {
 	width: 100%;
+	display: grid;
+	grid-template-rows: 2 1fr;
+	grid-template-columns: 2 1fr;
 }
 
 .peer_video-container {
@@ -170,11 +181,37 @@ td {
 	width: 100%;
 	text-align: center;
 }
+#my_videos {
+	display: grid;
+	grid-template-rows: 20px auto;
+	grid-template-columns: 2 1fr;
+	grid-template-areas: "control control" "cam utils";
+}
+.control-panel {
+  height: 20px;
+	padding-left: 20px;
+  grid-area: control;
+}
+.control-panel .icon-btn {
+	width: 20px;
+	height: 20px;
+	margin: 0px;
+	padding: 0px;
+	float: left;
+}
+#my_camera {
+	grid-area: cam;
+}
+#movie_music {
+	grid-area: utils;
+	display: none;
+}
 
 video {
   background-color: #373737;
-	width: 360px;
-	height: 480px;
+	width: 100%;
+	height: 100%;
+	padding: 10px 10px;
 }
 
 .alert-container {
@@ -265,4 +302,12 @@ video {
   max-height: 30%;
   overflow: auto;
   color: #ffffff;
+}
+.alert-response {
+	text-align: center;
+}
+.alert-response button {
+	float: none;
+	min-width: 100px;
+	margin-top: 20px;
 }

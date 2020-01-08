@@ -46,9 +46,16 @@ server.listen(3002, () => {
   console.log('Listening on port 3002')
 })
 
+const processMessage = require('./src/processRequest')
 io.on('connection', (socket) => {
+	socket.on('disconnect', () => {
+		processMessage(io, socket, 'disconnect', null)
+	})
+	socket.on('error', () => {
+		processMessage(io, socket, 'error', null)
+	})
   socket.on('*', (packet) => {
-    require('./src/processRequest')(
+    processMessage(
       io,
       socket,
       packet.data[0],
@@ -60,4 +67,3 @@ io.on('connection', (socket) => {
 process.on('uncaughtException', (error) => {
   console.log(error.stack);
 })
-
