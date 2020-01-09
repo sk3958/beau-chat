@@ -1,12 +1,12 @@
 class User {
   static userList = {}
 
-  constructor (userId, userName, userType, socket) {
+  constructor (userId, userName, userType, socket = null) {
     this.userId = userId
     this.userName = userName
     this.userType = userType
-    this.socket = socket
-    this.socketId = socket.id
+    this.socket = socket || null
+    this.socketId = null === this.socket ? null : socket.id
     this.status = 0
     this.roomId = '' 
 

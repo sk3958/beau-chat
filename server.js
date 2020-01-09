@@ -22,7 +22,7 @@ let options = {
 app.set('views', __dirname + '/src/client')
 app.set('view engine', 'ejs')
 app.engine('html', ejs.renderFile)
-app.use(express.static(__dirname + '/src/client'))
+app.use(express.static(__dirname + '/src/client/resources'))
 app.use(session({
   genid: (req) => {
     return uuid()
@@ -40,7 +40,10 @@ let wildcard = require('socketio-wildcard')()
 io.use(wildcard)
 
 app.get('/', (req, res) => {
-  checkUser(req, res)
+  checkUser(req, res, true)
+})
+app.get('/classroom', (req, res) => {
+  checkUser(req, res, false)
 })
 server.listen(3002, () => {
   console.log('Listening on port 3002')

@@ -1,11 +1,18 @@
 const redis = require('redis')
 const Cryptr = require('cryptr')
+const User = require('./user')
 const cryptr = new Cryptr(process.env.SESSION_SECRET)
 
-async function setUser (req, res) {
+async function setUser (req, res, isRootUrl) {
   let session = req.session
   if (session.logined && session.user_id.length > 0 && session.user_kind.length === 2) {
-    res.render('chat.html', session)
+		addUser(session)
+		if (isRootUrl) {
+			res.redirect('/classroom')
+		} else {
+			res.render('chat.html', session)
+		}
+
     return true
   }
 
@@ -30,7 +37,8 @@ async function setUser (req, res) {
 
       await redisClient.del(user_id)
 
-      res.render('chat.html', session)
+			addUser(session)
+			res.redirect('/classroom')
       return true
     }
   } catch(e) {
@@ -43,6 +51,16 @@ async function setUser (req, res) {
 
   res.sendStatus(404)
   return false
+}
+
+function addUser (session) {
+	if (!User.isUser(User.getUser(session.user_id)))
+	{
+		user = new User(session.user_id, session.user_name, session.user_kind)
+		User.userList[session.user_id] = user
+		return user
+	}
+	return null
 }
 
 module.exports = setUser

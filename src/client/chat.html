@@ -3,9 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Classroom</title>
-  <script type="text/javascript" src="./socket.io.js"></script>
-  <script type="text/javascript" src="./vue.js"></script>
-  <link rel="stylesheet" href="./style.css?after" type="text/css" />
+  <link rel="stylesheet" href="./css/style.css?after" type="text/css" />
 </head>
 <body>
   <div id="app">
@@ -45,7 +43,7 @@
 				<div id="peers" ref="peers">
 				</div>
 				<div class="video-container">
-					<my-video :my_id="my_id" :my_name="my_name" :is_room="is_room" @log="log" @video_info="onVideoInfo"></my-video>
+					<my-video :my_id="my_id" :my_name="my_name" :is_room="is_room" @log="log" @video_info="onVideoInfo" @show_message="showMessage"></my-video>
 				</div>
 			</div>
 		</div>
@@ -69,13 +67,14 @@
       userType: '<%= user_kind %>'
     }
   </script>
-  <script type="text/javascript" src="./adapter.js"></script>
-  <script type="text/javascript" src="./roomsInfo.js?after"></script>
-  <script type="text/javascript" src="./usersInfo.js?after"></script>
-  <script type="text/javascript" src="./myVideo.js?after"></script>
-  <script type="text/javascript" src="./peerVideo.js?after"></script>
-  <script type="text/javascript" src="./alert.js?after"></script>
-  <script type="text/javascript" src="./app.js?after"></script>
-  <script type="text/javascript" src="./ga.js"></script>
+  <script type="text/javascript" src="./js/lib/socket.io.js"></script>
+  <script type="text/javascript" src="./js/lib/vue.js"></script>
+  <script type="text/javascript" src="./js/lib/adapter.js"></script>
+  <script type="text/javascript" src="./js/roomsInfo.js?after"></script>
+  <script type="text/javascript" src="./js/usersInfo.js?after"></script>
+  <script type="text/javascript" src="./js/myVideo.js?after"></script>
+  <script type="text/javascript" src="./js/peerVideo.js?after"></script>
+  <script type="text/javascript" src="./js/alert.js?after"></script>
+  <script type="text/javascript" src="./js/app.js?after"></script>
 </body>
 </html>

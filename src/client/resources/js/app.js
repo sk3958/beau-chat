@@ -17,7 +17,8 @@ let vue = new Vue({
     on_room: 0,
 		is_room: false,
 		has_video: false,
-		stream: undefined,
+		camStream: undefined,
+		srcStream: undefined,
     on_enter: false,
     my_room: { users: {} },
     my_room_id: '',
@@ -37,11 +38,8 @@ let vue = new Vue({
 
   created() {
     this.my_id = info.userId
-    console.log('my_id = ', this.my_id)
     this.my_name = info.userName
-    console.log('my_name = ', this.my_name)
     this.my_type = info.userType
-    console.log('my_type = ', this.my_type)
     this.log = this.myLog
     socket.emit('addUser', JSON.stringify({ userId: this.my_id, userName: this.my_name, userType: this.my_type }))
     socket.emit('roomList')
@@ -54,10 +52,6 @@ let vue = new Vue({
 			if (this.is_room) this.sendLeaveRoom()
       socket.emit('deleteUser')
 			socket.disconnect()
-		})
-
-    window.addEventListener('keydown', (e) => {
-			this.myLog(e)
 		})
 
     window.onerror = (event, source, lineno, colno, error) => {
@@ -123,7 +117,8 @@ let vue = new Vue({
         my_id: this.my_id,
         peer_id: user.userId,
         peer_name: user.userName,
-        stream: this.stream,
+        camStream: this.camStream,
+        srcStream: this.srcStream,
         offer: needOffer,
         has_video: this.has_video
       }
@@ -132,7 +127,7 @@ let vue = new Vue({
 			this.peerVideos.push(instance)
       instance.$mount()
       this.$refs.peers.appendChild(instance.$el)
-      instance.initialize()
+      instance.initialize(this.myLog)
     },
 
     removePeerVideo (userId) {
@@ -239,12 +234,17 @@ let vue = new Vue({
       this.dummy++
     },
 
-		onVideoInfo (hasVideo, stream) {
+		onVideoInfo (hasVideo, stream, isCam) {
+			if (!isCam) {
+				this.srcStream = stream
+				return
+			}
+
 			this.has_video = hasVideo
 			if (hasVideo) {
-				this.stream = stream
+				this.camStream = stream
 			} else {
-				this.stream = undefined
+				this.camStream = undefined
 			}
     },
 

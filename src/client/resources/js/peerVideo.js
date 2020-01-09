@@ -48,7 +48,8 @@ var PeerVideo = Vue.component('PeerVideo', {
 		my_id: String,
 		peer_id: String,
 		peer_name: String,
-		stream: MediaStream,
+		camStream: MediaStream,
+		srcStream: MediaStream,
 		offer: Boolean,
 		has_video: Boolean
   },
@@ -57,25 +58,21 @@ var PeerVideo = Vue.component('PeerVideo', {
     return {
 			pc: undefined,
 			peerVideo: undefined,
-			dataChannel: undefined
+			dataChannel: undefined,
+			log: undefined,
+			srcStreamSenders: []
     }
   },
 
 	watch: {
-	},
-
-	mounted () {
-	},
-
-  beforeDestroy () {
-		/*if (undefined !== this.pc) {
-			this.pc.close()
-		  this.pc = undefined
-		}*/
+		srcStream (value) {
+			this.addTrack(value)
+		}
 	},
 
   methods: {
-		initialize () {
+		initialize (log) {
+			this.log = log
 			this.peerVideo = document.getElementById(this.peer_id)
 			this.socket.on('pcSignaling', (message) => {
 				var data = JSON.parse(message)
@@ -115,9 +112,11 @@ var PeerVideo = Vue.component('PeerVideo', {
 		async createPC () {
 			if (undefined === this.pc) this.pc = new RTCPeerConnection(pcConfig)
 			if (this.has_video) {
-				this.stream.getTracks().forEach(track => this.pc.addTrack(track, this.stream))
-				// this.pc.addTrack(this.stream.getVideoTracks()[0], this.stream)
-				// this.pc.addTrack(this.stream.getAudioTracks()[0], this.stream)
+				this.camStream.getTracks().forEach(track => 
+					this.pc.addTrack(track, this.camStream))
+
+				// this.pc.addTrack(this.camStream.getVideoTracks()[0], this.camStream)
+				// this.pc.addTrack(this.camStream.getAudioTracks()[0], this.camStream)
 			}
 
 			this.pc.onicecandidate = (event) => {
@@ -135,8 +134,12 @@ var PeerVideo = Vue.component('PeerVideo', {
 			}
 
 			this.pc.ontrack = (event) => {
-				if (this.peerVideo.srcObject !== event.streams[0]) {
+				if (event.streams[0] === this.peerVideo.srcObject) {
 					this.peerVideo.srcObject = event.streams[0]
+				} else if (undefined === this.peerVideo.srcObject || null === this.peerVideo.srcObject) {
+					this.peerVideo.srcObject = event.streams[0]
+				} else {
+					this.showMovieMusicPlayer(event.streams[0])
 				}
 			}
 
@@ -195,6 +198,18 @@ var PeerVideo = Vue.component('PeerVideo', {
 			} catch(e) {
 				this.log(e)
 			}
+		},
+
+		addTrack (stream) {
+			if (!(stream instanceof MediaStream)) return false
+
+			for (let i = this.srcStreamSenders.length - 1; i >= 0; i--) {
+				this.pc.removeTrack(this.srcStreamSenders.pop())
+			}
+
+			stream.getTracks().forEach(track => 
+				this.srcStreamSenders.push(
+					this.pc.addTrack(track, stream)))
 		}
   }
 })

@@ -2,6 +2,12 @@ var User = require('./user')
 var Room = require('./room')
 
 var processRequest = function (io, socket, url, data) {
+	if (!isValidConnection(socket, url, data)) {
+		socket.disconnect()
+		console.warn('Invalid connection detected: ',url, socket.handshake)
+		return false
+	}
+
   switch (url) {
     case 'disconnect':
       deleteUser(io, socket)
@@ -71,6 +77,8 @@ function deleteUser (io, socket) {
     user.destroy()
     io.sockets.emit('deleteUser', JSON.stringify(user.info))
   }
+
+	socket.disconnect()
 }
 
 function sendRoomList (socket) {
@@ -168,6 +176,22 @@ function relayData (message, data) {
     }
   } catch(e) {
   }
+}
+
+function isValidConnection (socket, url, data) {
+	if ('deleteUser' === url) return true
+	if ('disconnect' === url) return true
+
+	let user
+	if ('addUser' === url) {
+		user = User.getUser(data.userId)
+	} else {
+		user = User.getUserBySocketId(socket.id)
+	}
+
+	if (!User.isUser(user)) return false
+
+	return true
 }
 
 function debugClient (data, depth = 0) {

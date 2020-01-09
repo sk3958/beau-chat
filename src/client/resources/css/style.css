@@ -190,14 +190,25 @@ td {
 .control-panel {
   height: 20px;
 	padding-left: 20px;
+	color: white;
   grid-area: control;
 }
 .control-panel .icon-btn {
-	width: 20px;
 	height: 20px;
 	margin: 0px;
+	margin-left: 10px;
 	padding: 0px;
 	float: left;
+}
+.control-panel input[type=file] {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect[0, 0, 0, 0];
+	border: 0;
 }
 #my_camera {
 	grid-area: cam;
