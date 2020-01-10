@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>monaco editor</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/earlyaccess/nanumgothiccoding.css"/>
+</head>
+<body style="margin:0;">
+  <div id="monaco" style="height:100vh"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.16.2/min/vs/loader.js"></script>
+
+  <script>
+var editor;
+
+require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.16.2/min/vs' }});
+
+require(['vs/editor/editor.main'], function() {
+	editor = monaco.editor.create(document.getElementById('monaco'), {
+	theme: 'vs-dark',
+	fontFamily: 'Nanum Gothic Coding',
+	automaticLayout: true,
+	language: 'javascript',
+	value: [`var hello = 'world'`
+	].join('\n')
+	});
+});
+</script>
+</body>
+</html>
+

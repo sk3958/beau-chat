@@ -22,7 +22,7 @@ let options = {
 app.set('views', __dirname + '/src/client')
 app.set('view engine', 'ejs')
 app.engine('html', ejs.renderFile)
-app.use(express.static(__dirname + '/src/client'))
+app.use(express.static(__dirname + '/src/client/resources'))
 app.use(session({
   genid: (req) => {
     return uuid()
@@ -40,15 +40,25 @@ let wildcard = require('socketio-wildcard')()
 io.use(wildcard)
 
 app.get('/', (req, res) => {
-  checkUser(req, res)
+  checkUser(req, res, true)
+})
+app.get('/classroom', (req, res) => {
+  checkUser(req, res, false)
 })
 server.listen(3002, () => {
   console.log('Listening on port 3002')
 })
 
+const processMessage = require('./src/processRequest')
 io.on('connection', (socket) => {
+	socket.on('disconnect', () => {
+		processMessage(io, socket, 'disconnect', null)
+	})
+	socket.on('error', () => {
+		processMessage(io, socket, 'error', null)
+	})
   socket.on('*', (packet) => {
-    require('./src/processRequest')(
+    processMessage(
       io,
       socket,
       packet.data[0],
@@ -60,4 +70,3 @@ io.on('connection', (socket) => {
 process.on('uncaughtException', (error) => {
   console.log(error.stack);
 })
-

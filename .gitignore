@@ -1,5 +1,8 @@
 node_modules/
+<<<<<<< HEAD
 
 dump.rdb
 
+=======
+>>>>>>> d6623fca9561463456c8375550f060c3287f147d
 *.swp
