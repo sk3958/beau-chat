@@ -1,4 +1,3 @@
-var socket = io('')
 
 let vue = new Vue({
   el: '#app',
@@ -7,10 +6,10 @@ let vue = new Vue({
     my_name: '',
     my_type: '',
     my_status: 'waiting',
-    socket: socket,
+    socket: undefined,
     rooms: {},
     room_count: 0,
-		room_maxs: [ 2, 3, 4, 5, 6 ],
+		room_maxs: [ 2, 3, 4, 5],
     users: {},
     user_count: 0,
     on_waiting: 0,
@@ -18,7 +17,9 @@ let vue = new Vue({
 		is_room: false,
 		has_video: false,
 		camStream: undefined,
-		srcStream: undefined,
+		shareStream: undefined,
+		recvMessage: '',
+		sendMessage: '',
     on_enter: false,
     my_room: { users: {} },
     my_room_id: '',
@@ -41,73 +42,88 @@ let vue = new Vue({
     this.my_name = info.userName
     this.my_type = info.userType
     this.log = this.myLog
-    socket.emit('addUser', JSON.stringify({ userId: this.my_id, userName: this.my_name, userType: this.my_type }))
-    socket.emit('roomList')
-    socket.emit('userList')
+    this.socket = io('', { autoConnect: false })
 
     window.addEventListener('beforeunload', (e) => {
 			e.preventDefault()
 			e.returnValue = ''
 
-			if (this.is_room) this.sendLeaveRoom()
-      socket.emit('deleteUser')
-			socket.disconnect()
+			/* if (this.is_room) this.sendLeaveRoom()
+      this.socket.emit('deleteUser')
+			this.socket.disconnect() */
 		})
 
     window.onerror = (event, source, lineno, colno, error) => {
       this.myLog({ event: event, source: source, lineno: lineno, colno: colno, error: error })
     }
 
-    socket.on('addUser', (data) => {
+		this.socket.on('connect', () => {
+			this.socket.emit('addUser', JSON.stringify({ userId: this.my_id, userName: this.my_name, userType: this.my_type }))
+			this.socket.emit('roomList')
+			this.socket.emit('userList')
+		})
+		this.socket.on('connect_error', (error) => {
+			this.showMessage(error.message || 'cannot connect to server')
+		})
+		this.socket.on('disconnect', (reason) => {
+			// 'io server disconnect', 'io client disconnect', 'ping timeout'
+			if ('io client disconnect' !== reason) {
+				setTimeout(() => {
+					this.socket.connect()
+				}, 5000)
+			}
+		})
+    this.socket.on('addUser', (data) => {
       var user = JSON.parse(data)
       this.users[user.userId] = user
       this.updateUserList()
     })
-    socket.on('deleteUser', (data) => {
+    this.socket.on('deleteUser', (data) => {
       var user = JSON.parse(data)
       delete this.users[user.userId]
       this.updateUserList()
     })
-    socket.on('roomList', (data) => {
+    this.socket.on('roomList', (data) => {
       var roomList = JSON.parse(data)
       this.rooms = roomList
       this.room_count = Object.keys(this.rooms).length
     })
-    socket.on('userList', (data) => {
+    this.socket.on('userList', (data) => {
       var userList = JSON.parse(data)
       this.users = userList
 			this.updateUserList()
     })
-    socket.on('createRoom', (data) => {
+    this.socket.on('createRoom', (data) => {
       var room = JSON.parse(data)
       this.rooms[room.roomId] = room
       this.room_count = Object.keys(this.rooms).length
     })
-    socket.on('deleteRoom', (data) => {
+    this.socket.on('deleteRoom', (data) => {
       var room = JSON.parse(data)
       delete this.rooms[room.roomId]
       this.room_count = Object.keys(this.rooms).length
     })
-    socket.on('enterRoom', (data) => {
+    this.socket.on('enterRoom', (data) => {
       this.enterRoom(JSON.parse(data))
     })
-    socket.on('doneReadyForNewMember', (data) => {
+    this.socket.on('doneReadyForNewMember', (data) => {
 			var user = this.my_room.users[JSON.parse(data).from]
 			if (undefined !== user) this.addPeerVideo(user, true)
     })
-    socket.on('leaveRoom', (data) => {
+    this.socket.on('leaveRoom', (data) => {
       this.leaveRoom(JSON.parse(data))
     })
-    socket.on('invitedRoom', (data) => {
+    this.socket.on('invitedRoom', (data) => {
       this.invitedRoom(JSON.parse(data))
     })
-    socket.on('refusedInvite', (data) => {
+    this.socket.on('refusedInvite', (data) => {
       this.refusedInvite(JSON.parse(data))
     })
-    socket.on('requestFail', (data) => {
+    this.socket.on('requestFail', (data) => {
       this.showMessage('requestFail', 'Notification', JSON.parse(data).message)
     })
 
+		this.socket.open()
   },
 
   methods: {
@@ -118,7 +134,9 @@ let vue = new Vue({
         peer_id: user.userId,
         peer_name: user.userName,
         camStream: this.camStream,
-        srcStream: this.srcStream,
+        shareStream: this.shareStream,
+				recvMessage: this.recvMesaage,
+				sendMessage: this.sendMesaage,
         offer: needOffer,
         has_video: this.has_video
       }
@@ -127,7 +145,7 @@ let vue = new Vue({
 			this.peerVideos.push(instance)
       instance.$mount()
       this.$refs.peers.appendChild(instance.$el)
-      instance.initialize(this.myLog)
+      instance.initialize(this.myLog, this.changeProp)
     },
 
     removePeerVideo (userId) {
@@ -358,6 +376,22 @@ let vue = new Vue({
       } else {
         window.alert('cannot cancelFullscreen')
       }
+		},
+
+		changeProp (propName, value) {
+			switch (propName) {
+				case 'shareStream':
+					this.shareStream = value
+					break
+				case 'recvMessage':
+					this.recvMessage = value
+					break	
+				case 'sendMessage':
+					this.sendMessage = value
+					break	
+				default:
+					break
+			}
 		}
   }
 })

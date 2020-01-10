@@ -43,8 +43,25 @@
 				<div id="peers" ref="peers">
 				</div>
 				<div class="video-container">
-					<my-video :my_id="my_id" :my_name="my_name" :is_room="is_room" @log="log" @video_info="onVideoInfo" @show_message="showMessage"></my-video>
+					<my-video
+						:my_id="my_id"
+						:my_name="my_name"
+						:is_room="is_room"
+						@log="log"
+						@video_info="onVideoInfo"
+						@show_message="showMessage">
+					</my-video>
 				</div>
+				<div class="shares-container">
+					<shares
+						:is_room="is_room"
+						:share_stream="shareStream"
+						:recv_message="recvMessage"
+						:send_message="sendMessage"
+						@change_prop="changeProp"
+						@log="log">
+					</shares>
+        </div>
 			</div>
 		</div>
 		<div v-show="on_alert" class="alert-container">
@@ -74,6 +91,7 @@
   <script type="text/javascript" src="./js/usersInfo.js?after"></script>
   <script type="text/javascript" src="./js/myVideo.js?after"></script>
   <script type="text/javascript" src="./js/peerVideo.js?after"></script>
+  <script type="text/javascript" src="./js/shares.js?after"></script>
   <script type="text/javascript" src="./js/alert.js?after"></script>
   <script type="text/javascript" src="./js/app.js?after"></script>
 </body>
