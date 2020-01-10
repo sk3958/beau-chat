@@ -8,17 +8,17 @@ Vue.component('shares', {
 				<input type="file" id="stream_file" v-on:change="this.openFile">
 			</div>
 			<div id="share_video_div">
-				<video id="share_video" controls playsinline>
+				<video id="share_video" controls playsinline autoplay>
 					This browser does not support video tag.
-			  </video>
+        </video>
 			</div>
 			<div id="share_audio_div">
 				<audio id="share_audio" controls playsinline>
-			  </audio>
+        </audio>
 			</div>
 			<div id="share_text_div">
 				<div id="share_text">
-			  </div>
+				</div>
 			</div>
     </div>
   `,
@@ -125,12 +125,12 @@ Vue.component('shares', {
 
 			this.shareVideoDiv.style.display = 'block'
 
-			this.srcStream = this.shareVideo.captureStream()
-			this.$emit('change_prop', 'shareStream', this.srcStream)
 			return true
 		},
 
 		broadcastMedia () {
+			this.srcStream = this.shareVideo.captureStream()
+			this.$emit('change_prop', 'shareStream', this.srcStream)
 		},
 
 		log (message) {

@@ -172,7 +172,7 @@ let vue = new Vue({
       room.userCount = room.userCount + 1
 
       if (data.userId === this.my_id) {
-				this.launchFullScreen(document.body)
+				//this.launchFullScreen(document.body)
         this.my_status = 'in room ' + data.roomId
         this.is_room = true
         this.my_room = room
@@ -222,7 +222,7 @@ let vue = new Vue({
 			this.my_room = undefined
 			this.my_room_id = ''
 			this.my_room_name = ''
-			this.exitFullScreen()
+			//this.exitFullScreen()
 		},
 
     sendLeaveRoom () {
@@ -381,7 +381,7 @@ let vue = new Vue({
 		changeProp (propName, value) {
 			switch (propName) {
 				case 'shareStream':
-					this.shareStream = value
+          this.setShareStream(value)
 					break
 				case 'recvMessage':
 					this.recvMessage = value
@@ -392,6 +392,13 @@ let vue = new Vue({
 				default:
 					break
 			}
-		}
+    },
+    
+    setShareStream (stream) {
+      this.shareStream = stream
+			this.peerVideos.forEach((peerVideo) => {
+        peerVideo.shareStream = stream
+			})
+    }
   }
 })

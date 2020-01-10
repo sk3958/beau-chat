@@ -49,7 +49,7 @@ var PeerVideo = Vue.component('PeerVideo', {
 		peer_id: String,
 		peer_name: String,
 		camStream: MediaStream,
-		srcStream: MediaStream,
+		shareStream: MediaStream,
 		offer: Boolean,
 		has_video: Boolean
   },
@@ -60,12 +60,13 @@ var PeerVideo = Vue.component('PeerVideo', {
 			peerVideo: undefined,
 			dataChannel: undefined,
 			log: undefined,
-			srcStreamSenders: []
+			shareStreamSenders: [],
+			shareOffer: false
     }
   },
 
 	watch: {
-		srcStream (value) {
+		shareStream (value) {
 			this.addTrack(value)
 		}
 	},
@@ -114,10 +115,8 @@ var PeerVideo = Vue.component('PeerVideo', {
 			if (this.has_video) {
 				this.camStream.getTracks().forEach(track => 
 					this.pc.addTrack(track, this.camStream))
-
-				// this.pc.addTrack(this.camStream.getVideoTracks()[0], this.camStream)
-				// this.pc.addTrack(this.camStream.getAudioTracks()[0], this.camStream)
 			}
+
 
 			this.pc.onicecandidate = (event) => {
 				if (!event.candidate) return
@@ -131,6 +130,13 @@ var PeerVideo = Vue.component('PeerVideo', {
 			}
 
 			this.pc.onconnectionstatechange = (event) => {
+			}
+
+			this.pc.onnegotiationneeded = (event) => {
+				if (this.shareOffer) {
+					this.createOffer()
+					this.shareOffer = false
+				}
 			}
 
 			this.pc.ontrack = (event) => {
@@ -150,9 +156,9 @@ var PeerVideo = Vue.component('PeerVideo', {
 				this.pc.ondatachannel = (event) => {
 					this.dataChannel = event.channel
 				}
-
-				this.sendDoneReadyForNewMember()
 			}
+
+			if (!this.offer) this.sendDoneReadyForNewMember()
 		},
 
 		async createOffer () {
@@ -203,13 +209,34 @@ var PeerVideo = Vue.component('PeerVideo', {
 		addTrack (stream) {
 			if (!(stream instanceof MediaStream)) return false
 
-			for (let i = this.srcStreamSenders.length - 1; i >= 0; i--) {
-				this.pc.removeTrack(this.srcStreamSenders.pop())
+			for (let i = this.shareStreamSenders.length - 1; i >= 0; i--) {
+				this.pc.removeTrack(this.shareStreamSenders.pop())
 			}
 
-			stream.getTracks().forEach(track => 
-				this.srcStreamSenders.push(
-					this.pc.addTrack(track, stream)))
+			stream.getTracks().forEach((track) => {
+				let sender = this.pc.addTrack(track, stream)
+				this.shareStreamSenders.push(sender)
+			})
+
+			this.shareOffer = true
+		},
+
+    showMovieMusicPlayer (stream) {
+			let isVideo = stream.getVideoTracks().length > 0
+			let player = container = undefined
+
+			if (isVideo) {
+				player = document.getElementById('share_video')
+				container = document.getElementById('share_video_div')
+			} else {
+				player = document.getElementById('share_audio')
+				container = document.getElementById('share_audio_div')
+			}
+
+			container.style.display = 'block'
+			player.srcObject = stream
+
+			player.play()
 		}
   }
 })

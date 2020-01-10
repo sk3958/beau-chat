@@ -2,11 +2,11 @@ var User = require('./user')
 var Room = require('./room')
 
 var processRequest = function (io, socket, url, data) {
-	if (!isValidConnection(socket, url, data)) {
-		// socket.disconnect()
+	/*if (!isValidConnection(socket, url, data)) {
+		socket.disconnect()
 		console.warn('Invalid connection detected: ',url, socket.handshake)
-		// return false
-	}
+		return false
+	}*/
 
   switch (url) {
     case 'disconnect':
