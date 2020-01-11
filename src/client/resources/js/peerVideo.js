@@ -1,4 +1,5 @@
 const pcConfig = {
+	sdpSemantics: 'unified-plan',
 	iceServers: [
 		{
 			urls: "stun:stun.stunprotocol.org"
