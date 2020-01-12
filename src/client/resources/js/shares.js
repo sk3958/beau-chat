@@ -2,10 +2,11 @@ Vue.component('shares', {
   template: `
     <div id="shares">
 			<div class="control-panel">
-				<button type="button" class="icon-btn" v-on:click="this.openFileSelector">Open</button>
-				<button type="button" class="icon-btn" v-on:click="this.broadcastMedia">Share</button>
+				<button type="button" class="icon-btn" v-on:click="openFileSelector">Open</button>
+				<button type="button" class="icon-btn" v-on:click="broadcastMedia">Share</button>
+				<button type="button" class="icon-btn" v-on:click="showChatBox">chat</button>
 				<span id="file_name">{{ this.fileName }}</span>
-				<input type="file" id="stream_file" v-on:change="this.openFile">
+				<input type="file" id="stream_file" accept="audio/*|video/*" v-on:change="openFile">
 			</div>
 			<div id="share_video_div">
 				<video id="share_video" controls playsinline autoplay>
@@ -18,6 +19,23 @@ Vue.component('shares', {
 			</div>
 			<div id="share_text_div">
 				<div id="share_text">
+					<div class="message" v-for="(message, index) in messages" :key="index">
+						<div v-if="message.from === 'me'" class="my-message">
+							<p>{{ message.from }}:{{ message.message }}</p>
+						</div>
+						<div v-if="message.from !== 'me'" class="peer-message">
+							<p>{{ message.from }}:{{ message.message }}</p>
+						</div>
+					</div>
+					<div class="dummy">
+						{{ messageCount }}
+					</div>
+				</div>
+				<div id="message_box">
+					<input id="chat_input" type="text" v-on:keyup.enter="sendMessage" />
+					<button type="button" v-on:click="sendMessage">send</button>
+					<button type="button" v-on:click="openSendFileSelector">file</button>
+					<input type="file" id="file_file" v-on:change="sendFile">
 				</div>
 			</div>
     </div>
@@ -25,9 +43,8 @@ Vue.component('shares', {
 
   props: {
 		is_room: Boolean,
-		shareStream: MediaStream,
-		recvMessage: String,
-		sendMessage: String
+		share_stream: MediaStream,
+		recv_message: Object
   },
 
   data: function () {
@@ -41,23 +58,34 @@ Vue.component('shares', {
 			shareAudio: undefined,
 			shareAudioDiv: undefined,
 			shareText: undefined,
-			shareTextDiv: undefined
+			shareTextDiv: undefined,
+			chatInput: undefined,
+			messages: [],
+			messageCount: 0,
+			sendFileSelector: undefined,
+			observer: undefined
     }
   },
 
 	watch: {
 		is_room (value) {
 			if (value) this.init()
-			else this.stop()
+			else this.clear()
 		},
 
 		fileName (value) {
 			if ('' !== value) this.openFile()
+		},
+
+		recv_message (value) {
+			this.messages.push(value)
+			this.showChatBox()
+			this.messageCount = this.messages.length
 		}
 	},
 
   beforeDestroy () {
-		this.stop()
+		this.clear()
 	},
 
   methods: {
@@ -86,17 +114,30 @@ Vue.component('shares', {
 				this.shareTextDiv = document.getElementById('share_text_div')
 				this.shareTextDiv.style.display = 'none'
 			}
+			if (undefined === this.chatInput) {
+				this.chatInput = document.getElementById('chat_input')
+			}
+			if (undefined === this.sendFileSelector) {
+				this.sendFileSelector = document.getElementById('file_file')
+			}
+			if (undefined === this.observer) this.createObserver()
 
 			this.fileName = ''
 			this.fileOpener.value = ''
 		},
 
-		stop () {
+		clear () {
 			try {
 				if ('' !== this.shareVideo.src) {
 					this.shareVideo.pause()
 					this.shareVideo.src = ''
 				}
+				if ('' !== this.shareAudio.src) {
+					this.shareAudio.pause()
+					this.shareAudio.src = ''
+				}
+
+				this.messages = []
 
 				this.srcStream = undefined
 				this.$emit('change_prop', 'shareStream', this.srcStream)
@@ -131,6 +172,49 @@ Vue.component('shares', {
 		broadcastMedia () {
 			this.srcStream = this.shareVideo.captureStream()
 			this.$emit('change_prop', 'shareStream', this.srcStream)
+		},
+
+		sendMessage () {
+			if ('' === this.chatInput.value) return
+
+			let message = {}
+			message.type = 'message'
+			message.from = 'me'
+			message.message = this.chatInput.value
+			this.messages.push(message)
+			this.$emit('change_prop', 'messageToSend', message)
+			this.chatInput.value = ''
+			this.chatInput.focus()
+		},
+
+		openSendFileSelector () {
+			this.sendFileSelector.click()
+		},
+
+		sendFile () {
+			if ('' === this.sendFileSelector.value) return
+
+			let file = this.sendFileSelector.files[0]
+			let message = {}
+			message.type = 'message'
+			message.from = 'me'
+			message.message = `sending file ${file.name}(size: ${file.size})`
+			this.$emit('change_prop', 'messageToSend', message)
+			this.$emit('change_prop', 'fileToSend', file)
+		},
+
+		showChatBox () {
+			this.shareTextDiv.style.display = 'block'
+			this.chatInput.focus()
+		},
+
+		createObserver () {
+			this.observer = new MutationObserver(this.scrollToBottom)
+			this.observer.observe(this.shareText, { childList: true })
+		},
+
+		scrollToBottom () {
+			this.shareText.scrollTop = this.shareText.scrollHeight
 		},
 
 		log (message) {

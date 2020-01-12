@@ -36,7 +36,7 @@
     </div>
 		<div v-show="is_room" id="chat_room_container">
 			<div id="room_header">
-				 {{ my_room_name }}({{ my_room_id }})
+        {{ my_room_name }}({{ my_room_id }})
 				<button type="button" v-on:click="sendLeaveRoom">Leave Room</button>
 			</div>
 			<div id="chat_room" ref="chat_room">
@@ -57,7 +57,6 @@
 						:is_room="is_room"
 						:share_stream="shareStream"
 						:recv_message="recvMessage"
-            :send_message="sendMessage"
             @show_message="showMessage"
 						@change_prop="changeProp"
 						@log="log">

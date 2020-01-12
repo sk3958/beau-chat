@@ -18,8 +18,9 @@ let vue = new Vue({
 		has_video: false,
 		camStream: undefined,
 		shareStream: undefined,
-		recvMessage: '',
-		sendMessage: '',
+		recvMessage: {},
+    messageToSend: {},
+    fileToSend: undefined,
     on_enter: false,
     my_room: { users: {} },
     my_room_id: '',
@@ -135,8 +136,8 @@ let vue = new Vue({
         peer_name: user.userName,
         camStream: this.camStream,
         shareStream: this.shareStream,
-				recvMessage: this.recvMesaage,
-				sendMessage: this.sendMesaage,
+        messageToSend: this.messageToSend,
+        fileToSend: this.fileToSend,
         offer: needOffer,
         has_video: this.has_video
       }
@@ -145,7 +146,7 @@ let vue = new Vue({
 			this.peerVideos.push(instance)
       instance.$mount()
       this.$refs.peers.appendChild(instance.$el)
-      instance.initialize(this.myLog, this.changeProp)
+      instance.initialize(this.myLog, this.changeProp, this.showMessage)
     },
 
     removePeerVideo (userId) {
@@ -386,8 +387,11 @@ let vue = new Vue({
 				case 'recvMessage':
 					this.recvMessage = value
 					break	
-				case 'sendMessage':
-					this.sendMessage = value
+				case 'fileToSend':
+          this.sendFile(value)
+					break	
+				case 'messageToSend':
+          this.sendMessage(value)
 					break	
 				default:
 					break
@@ -398,6 +402,20 @@ let vue = new Vue({
       this.shareStream = stream
 			this.peerVideos.forEach((peerVideo) => {
         peerVideo.shareStream = stream
+			})
+    },
+
+    sendMessage (message) {
+      this.messageToSend = message
+			this.peerVideos.forEach((peerVideo) => {
+        peerVideo.messageToSend = message
+			})
+    },
+
+    sendFile (file) {
+      this.fileToSend = file
+			this.peerVideos.forEach((peerVideo) => {
+        peerVideo.fileToSend = file
 			})
     }
   }
