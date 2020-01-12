@@ -278,7 +278,6 @@ var PeerVideo = Vue.component('PeerVideo', {
 		},
 
 		sendMessageToPeer (message) {
-			message.from = this.my_id
 			this.dataChannel.send(JSON.stringify(message))
 		},
 
@@ -342,7 +341,6 @@ var PeerVideo = Vue.component('PeerVideo', {
 			this.downloadAnchor.class = 'download'
 			let parent = document.getElementById('shares')
 			parent.appendChild(this.downloadAnchor)
-
 		},
 
 		clearDownloadAnchor () {
@@ -360,16 +358,16 @@ var PeerVideo = Vue.component('PeerVideo', {
 
 		makeSendProgress (file) {
 			this.sendProgressDiv = document.createElement('div')
-			this.sendProgressDiv.class = 'progress'
 			let p = document.createElement('p')
-			p.appendChild(document.createTextNode(`sending ${file.name}`))
+			p.appendChild(document.createTextNode(`sending ${file.name} to ${this.peer_id}`))
 			this.sendProgressDiv.appendChild(p)
 			this.sendProgress = document.createElement('progress')
 			this.sendProgress.max = file.size
 			this.sendProgress.value = '0'
 			this.sendProgressDiv.appendChild(this.sendProgress)
-			let parent = document.getElementById('shares')
+			let parent = document.getElementById('share_text')
 			parent.appendChild(this.sendProgressDiv)
+			this.sendProgressDiv.classList.toggle('progress')
 		},
 
 		clearSendProgress () {
@@ -386,16 +384,16 @@ var PeerVideo = Vue.component('PeerVideo', {
 
 		makeRecvProgress (filename, filesize) {
 			this.recvProgressDiv = document.createElement('div')
-			this.recvProgressDiv.class = 'progress'
 			let p = document.createElement('p')
-			p.appendChild(document.createTextNode(`receiving ${filename}`))
+			p.appendChild(document.createTextNode(`receiving ${filename} from ${this.peer_id}`))
 			this.recvProgressDiv.appendChild(p)
 			this.recvProgress = document.createElement('progress')
 			this.recvProgress.max = filesize
 			this.recvProgress.value = 0
 			this.recvProgressDiv.appendChild(this.recvProgress)
-			let parent = document.getElementById('shares')
+			let parent = document.getElementById('share_text')
 			parent.appendChild(this.recvProgressDiv)
+			this.recvProgressDiv.classList.toggle('progress')
 		}
   }
 })

@@ -205,27 +205,106 @@ input[type=file] {
 #share_text {
 	width: 100%;
 	height: 450px;
-	margin: 10px;
+	margin-top: 20px;
 	overflow-y: auto;
 	overflow-x: hidden;
+	background-color: #575757;
 	word-wrap: break-word;
+}
+.my-name {
+	width: 100%;
+	min-width: 100%;
+	max-width: 100%;
+}
+.my-name .name {
+	width: 100%;
+	min-width: 100%;
+	max-width: 100%;
+	position: relative;
+	text-align: right;
+	padding: 2px 20px;
 }
 .my-message {
 	width: 100%;
+	min-width: 100%;
+	max-width: 100%;
 	word-wrap: break-word;
+}
+.my-message .my-talk {
+	position: relative;
+	float: right;
+	max-width: 70%;
+	word-wrap: break-word;
+	padding: 2px 20px;
+	margin: 0px 50px;
+	background: #91bd00;
+	/*border-radius: .4em;*/
+}
+.my-message .my-talk:after {
+	content: '';
+	position: absolute;
+	right: 0;
+	top: 50%;
+	width: 0;
+	height: 0;
+	border: 5px solid transparent;
+	border-left-color: #91bd00;
+	border-right: 0;
+	border-top: 0;
+	margin-top: -5px;
+	margin-right: -5px;
+}
+.peer-message {
+	width: 100%;
+	word-wrap: break-word;
+}
+.peer-message .name {
+	position: relative;
+	padding: 2px 20px;
+}
+.peer-message .peer-talk {
+	position: relative;
+	padding: 2px 20px;
+	margin: 0px 50px;
+	background: #ea6cd3;
+	/*border-radius: .4em;*/
+}
+.peer-message .peer-talk:after {
+  content: '';
+	position: absolute;
+	left: 0;
+	top: 50%;
+	width: 0;
+	height: 0;
+	border: 5px solid transparent;
+	border-right-color: #ea6cd3;
+	border-left: 0;
+	border-top: 0;
+	margin-top: -5px;
+	margin-left: -5px;
 }
 #message_box {
 	position: relative;
 	margin-bottom: 10px;
 }
 #message_box input {
+	margin: 10px 0px;
 	width: 100%;
 	padding: 5px;
 	padding-right: 100px;
 	border: none;
 	outline: none;
 }
-#message_box button {
+#message_box #send {
+	position: absolute;
+	right: 30px;
+	top: 4px;
+	border: none;
+	height: 20px;
+	outline: none;
+	padding: 2px;
+}
+#message_box #file {
 	position: absolute;
 	right: 0px;
 	top: 4px;
@@ -242,13 +321,13 @@ video {
 	padding: 10px 10px;
 }
 
+#shares {
+	position: relative;
+}
+
 div.progress {
-	width: 250px;
-	z-index: 9;
-	position: fixed;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -100%);
+	width: 100%;
+	padding: 0px 50px;
 }
 progress {
 	width: 100%;
@@ -272,7 +351,7 @@ progress {
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -100%);
+  transform: translate(-50%, -50%);
   padding: 20px;
   background-color: #333333;
   border-radius: 5px;

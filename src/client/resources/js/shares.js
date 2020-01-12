@@ -20,11 +20,16 @@ Vue.component('shares', {
 			<div id="share_text_div">
 				<div id="share_text">
 					<div class="message" v-for="(message, index) in messages" :key="index">
-						<div v-if="message.from === 'me'" class="my-message">
-							<p>{{ message.from }}:{{ message.message }}</p>
+						<div v-if="message.from === my_id">
+							<div class="my-name"><div class="name">me</div></div><br>
+							<div class="my-message"><div class="my-talk">{{ message.message }}</div></div>
 						</div>
-						<div v-if="message.from !== 'me'" class="peer-message">
-							<p>{{ message.from }}:{{ message.message }}</p>
+						<div v-if="message.from !== my_id">
+							<div class="peer-name"><div class="name">me</div></div><br>
+							<div class="peer-message"><div class="peer-talk">{{ message.message }}</div></div>
+						</div>
+							<p><span class="name">{{ message.from }}</span></p>
+							<p><span class="peer-talk">{{ message.message }}</span></p>
 						</div>
 					</div>
 					<div class="dummy">
@@ -32,9 +37,9 @@ Vue.component('shares', {
 					</div>
 				</div>
 				<div id="message_box">
-					<input id="chat_input" type="text" v-on:keyup.enter="sendMessage" />
-					<button type="button" v-on:click="sendMessage">send</button>
-					<button type="button" v-on:click="openSendFileSelector">file</button>
+					<input id="chat_input" type="text" v-on:keyup.enter="sendMessage">
+					<button id="send" type="button" v-on:click="sendMessage">send</button>
+					<button id="file" type="button" v-on:click="openSendFileSelector">file</button>
 					<input type="file" id="file_file" v-on:change="sendFile">
 				</div>
 			</div>
@@ -42,6 +47,7 @@ Vue.component('shares', {
   `,
 
   props: {
+		my_id: String,
 		is_room: Boolean,
 		share_stream: MediaStream,
 		recv_message: Object
@@ -124,6 +130,7 @@ Vue.component('shares', {
 
 			this.fileName = ''
 			this.fileOpener.value = ''
+			this.showChatBox()
 		},
 
 		clear () {
@@ -179,7 +186,7 @@ Vue.component('shares', {
 
 			let message = {}
 			message.type = 'message'
-			message.from = 'me'
+			message.from = this.my_id
 			message.message = this.chatInput.value
 			this.messages.push(message)
 			this.$emit('change_prop', 'messageToSend', message)
@@ -198,6 +205,7 @@ Vue.component('shares', {
 			let message = {}
 			message.type = 'message'
 			message.from = 'me'
+			this.messages.push(message)
 			message.message = `sending file ${file.name}(size: ${file.size})`
 			this.$emit('change_prop', 'messageToSend', message)
 			this.$emit('change_prop', 'fileToSend', file)
