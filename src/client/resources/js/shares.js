@@ -8,28 +8,16 @@ Vue.component('shares', {
 				<span id="file_name">{{ this.fileName }}</span>
 				<input type="file" id="stream_file" accept="audio/*|video/*" v-on:change="openFile">
 			</div>
-			<div id="share_video_div">
-				<video id="share_video" controls playsinline autoplay>
-					This browser does not support video tag.
-        </video>
-			</div>
-			<div id="share_audio_div">
-				<audio id="share_audio" controls playsinline>
-        </audio>
-			</div>
 			<div id="share_text_div">
 				<div id="share_text">
 					<div class="message" v-for="(message, index) in messages" :key="index">
 						<div v-if="message.from === my_id">
-							<div class="my-name"><div class="name">me</div></div><br>
+							<div class="my-name"><div class="name">me</div></div>
 							<div class="my-message"><div class="my-talk">{{ message.message }}</div></div>
 						</div>
 						<div v-if="message.from !== my_id">
-							<div class="peer-name"><div class="name">me</div></div><br>
+							<div class="peer-name"><div class="name">{{ message.from }}</div></div>
 							<div class="peer-message"><div class="peer-talk">{{ message.message }}</div></div>
-						</div>
-							<p><span class="name">{{ message.from }}</span></p>
-							<p><span class="peer-talk">{{ message.message }}</span></p>
 						</div>
 					</div>
 					<div class="dummy">
@@ -43,7 +31,22 @@ Vue.component('shares', {
 					<input type="file" id="file_file" v-on:change="sendFile">
 				</div>
 			</div>
-    </div>
+			<div id="share_video_div">
+				<div class="drag-target">
+				  <button v-on:click="closeShareDiv(1)">X</button>
+				</div>
+				<video id="share_video" controls playsinline autoplay muted>
+					This browser does not support video tag.
+				</video>
+			</div>
+			<div id="share_audio_div">
+				<div class="drag-target">
+				  <button v-on:click="closeShareDiv(2)">X</button>
+				</div>
+				<audio id="share_audio" controls playsinline>
+				</audio>
+			</div>
+		</div>
   `,
 
   props: {
@@ -69,7 +72,10 @@ Vue.component('shares', {
 			messages: [],
 			messageCount: 0,
 			sendFileSelector: undefined,
-			observer: undefined
+			observer: undefined,
+			dragTarget: undefined,
+			xEventPos: 0,
+			yEventPos: 0
     }
   },
 
@@ -90,44 +96,30 @@ Vue.component('shares', {
 		}
 	},
 
+	mounted () {
+		this.fileOpener = document.getElementById('stream_file')
+		this.shareVideo = document.getElementById('share_video')
+		this.shareAudio = document.getElementById('share_audio')
+		this.shareText = document.getElementById('share_text')
+		this.shareVideoDiv = document.getElementById('share_video_div')
+		this.shareVideoDiv.style.display = 'none'
+		this.shareAudioDiv = document.getElementById('share_audio_div')
+		this.shareAudioDiv.style.display = 'none'
+		this.shareTextDiv = document.getElementById('share_text_div')
+		this.shareTextDiv.style.display = 'none'
+		this.chatInput = document.getElementById('chat_input')
+		this.sendFileSelector = document.getElementById('file_file')
+		this.createObserver()
+		this.setDragEvent()
+		this.setVideoEvent()
+	},
+
   beforeDestroy () {
 		this.clear()
 	},
 
   methods: {
 		init () {
-			if (undefined === this.fileOpener) {
-				this.fileOpener = document.getElementById('stream_file')
-			}
-			if (undefined === this.shareVideo) {
-				this.shareVideo = document.getElementById('share_video')
-			}
-			if (undefined === this.shareAudio) {
-				this.shareAudio = document.getElementById('share_audio')
-			}
-			if (undefined === this.shareText) {
-				this.shareText = document.getElementById('share_text')
-			}
-			if (undefined === this.shareVideoDiv) {
-				this.shareVideoDiv = document.getElementById('share_video_div')
-				this.shareVideoDiv.style.display = 'none'
-			}
-			if (undefined === this.shareAudioDiv) {
-				this.shareAudioDiv = document.getElementById('share_audio_div')
-				this.shareAudioDiv.style.display = 'none'
-			}
-			if (undefined === this.shareTextDiv) {
-				this.shareTextDiv = document.getElementById('share_text_div')
-				this.shareTextDiv.style.display = 'none'
-			}
-			if (undefined === this.chatInput) {
-				this.chatInput = document.getElementById('chat_input')
-			}
-			if (undefined === this.sendFileSelector) {
-				this.sendFileSelector = document.getElementById('file_file')
-			}
-			if (undefined === this.observer) this.createObserver()
-
 			this.fileName = ''
 			this.fileOpener.value = ''
 			this.showChatBox()
@@ -135,22 +127,49 @@ Vue.component('shares', {
 
 		clear () {
 			try {
-				if ('' !== this.shareVideo.src) {
-					this.shareVideo.pause()
-					this.shareVideo.src = ''
-				}
-				if ('' !== this.shareAudio.src) {
-					this.shareAudio.pause()
-					this.shareAudio.src = ''
-				}
-
+				this.clearShareVideo()
+				this.clearShareVideo()
 				this.messages = []
-
-				this.srcStream = undefined
-				this.$emit('change_prop', 'shareStream', this.srcStream)
 			} catch(e) {
 				this.log(e)
 			}
+		},
+
+		clearShareVideo () {
+			try {
+				if ('' !== this.shareVideo.src) {
+					this.shareVideo.pause()
+					URL.revokeObjectURL(this.shareVideo.src)
+					this.shareVideo.src = ''
+				}
+
+				if (undefined !== this.srcStream)
+				{
+					this.srcStream.getTracks().forEach(track => track.stop())
+				}
+			} catch(e) {
+				this.log(e.message || e.stack || e)
+			}
+
+			this.fileName = ''
+			this.fileOpener.value = ''
+			this.shareVideoDiv.style.display = 'none'
+			this.srcStream = undefined
+			this.$emit('change_prop', 'shareStream', this.srcStream)
+		},
+
+		clearShareAudio () {
+			if ('' !== this.shareAudio.src) {
+				this.shareAudio.pause()
+				URL.revokeObjectURL(this.shareAudio.src)
+				this.shareAudio.src = ''
+			}
+
+			this.fileName = ''
+			this.fileOpener.value = ''
+			this.shareAudioDiv.style.display = 'none'
+			this.srcStream = undefined
+			this.$emit('change_prop', 'shareStream', this.srcStream)
 		},
 
 		openFileSelector () {
@@ -158,6 +177,8 @@ Vue.component('shares', {
 		},
 
 		openFile () {
+			if ('' === this.fileOpener.value) return
+
 			let file = this.fileOpener.files[0]
 			let type = file.type
 			let canPlay = this.shareVideo.canPlayType(type)
@@ -205,15 +226,15 @@ Vue.component('shares', {
 			let message = {}
 			message.type = 'message'
 			message.from = 'me'
-			this.messages.push(message)
 			message.message = `sending file ${file.name}(size: ${file.size})`
-			this.$emit('change_prop', 'messageToSend', message)
+			this.messages.push(message)
+			this.messageCount = this.messages.length
 			this.$emit('change_prop', 'fileToSend', file)
 		},
 
 		showChatBox () {
 			this.shareTextDiv.style.display = 'block'
-			this.chatInput.focus()
+			//this.chatInput.focus()
 		},
 
 		createObserver () {
@@ -223,6 +244,114 @@ Vue.component('shares', {
 
 		scrollToBottom () {
 			this.shareText.scrollTop = this.shareText.scrollHeight
+		},
+
+		setDragEvent () {
+      const onMouseDown = (e) => {
+				this.dragTarget = e.target
+				this.xEventPos = e.clientX
+				this.yEventPos = e.clientY
+			}
+
+			const onMouseMove = (e) => {
+				if (undefined === this.dragTarget) return
+
+				e.preventDefault()
+				let curLeft = this.dragTarget.offsetLeft
+				let curTop = this.dragTarget.offsetTop
+				let gapX = e.clientX - this.xEventPos
+				let gapY = e.clientY - this.yEventPos
+				this.dragTarget.style.left = (curLeft + gapX) + 'px'
+				this.dragTarget.style.top = (curTop + gapY) + 'px'
+				this.xEventPos = e.clientX
+				this.yEventPos = e.clientY
+			}
+
+			const onMouseUp = (e) => {
+				this.dragTarget = undefined
+				this.xEventPos = 0
+				this.yEventPos = 0
+			}
+
+			const onTouchStart = (e) => {
+				if (undefined !== this.dragTarget &&
+					this.dragTarget instanceof HTMLDivElement &&
+					0 === this.dragTarget.id.indexOf('share_')) return
+
+				this.dragTarget = e.targetTouches[0].target
+				this.dragTarget = this.dragTarget.parentElement
+
+				let point = e.targetTouches[0]
+				let x = Math.round(point.pageX)
+				let y = Math.round(point.pageY)
+				this.xEventPos = x
+				this.yEventPos = y
+			}
+
+			const onTouchMove = (e) => {
+				if (undefined === this.dragTarget) return
+
+				e.preventDefault()
+				let point = e.targetTouches[0]
+				let x = Math.round(point.pageX)
+				let y = Math.round(point.pageY)
+				let curLeft = this.dragTarget.offsetLeft
+				let curTop = this.dragTarget.offsetTop
+				let gapX = x - this.xEventPos
+				let gapY = y - this.yEventPos
+
+				this.dragTarget.style.left = (curLeft + gapX) + 'px'
+				this.dragTarget.style.top = (curTop + gapY) + 'px'
+				this.xEventPos = x
+				this.yEventPos = y
+			}
+
+			const onTouchEnd = (e) => {
+				this.dragTarget = undefined
+				this.xEventPos = 0
+				this.yEventPos = 0
+			}
+
+			const onTouchCancel = (e) => {
+				this.dragTarget = undefined
+				this.xEventPos = 0
+				this.yEventPos = 0
+			}
+
+			let el = this.shareVideoDiv.querySelector('.drag-target')
+			el.addEventListener('mousedown', onMouseDown)
+			el.addEventListener('mousemove', onMouseMove)
+			el.addEventListener('mouseup', onMouseUp)
+			el.addEventListener('touchstart', onTouchStart)
+			el.addEventListener('touchmove', onTouchMove)
+			el.addEventListener('touchend', onTouchEnd)
+			el.addEventListener('touchcancel', onTouchCancel)
+
+			el = this.shareAudioDiv.querySelector('.drag-target')
+			el.addEventListener('mousedown', onMouseDown)
+			el.addEventListener('mousemove', onMouseMove)
+			el.addEventListener('mouseup', onMouseUp)
+			el.addEventListener('touchstart', onTouchStart)
+			el.addEventListener('touchmove', onTouchMove)
+			el.addEventListener('touchend', onTouchEnd)
+			el.addEventListener('touchcancel', onTouchCancel)
+		},
+
+		closeShareDiv (target) {
+			if (1 === target) this.clearShareVideo()
+			else if (2 === target) this.clearShareAudio()
+		},
+
+		setVideoEvent () {
+			video = this.shareVideo
+			/*video.addEventListener('ended', () => {
+				this.clearShareVideo()
+			})*/
+
+			/*video.addEventListener('play', () => {
+				if (undefined === this.srcStream) this.broadcastMedia()
+			})*/
+
 		},
 
 		log (message) {

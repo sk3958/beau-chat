@@ -33,6 +33,9 @@ var processRequest = function (io, socket, url, data) {
     case 'enterRoom':
       enterRoom(io, socket, data)
       break
+    case 'newMemberIsReady':
+      relayRoomData(io, 'newMemberIsReady', data)
+      break
     case 'doneReadyForNewMember':
       relayData('doneReadyForNewMember', data)
       break
@@ -176,6 +179,10 @@ function relayData (message, data) {
     }
   } catch(e) {
   }
+}
+
+function relayRoomData (io, message, data) {
+	io.to(data.roomId).emit(message, JSON.stringify(data))
 }
 
 function isValidConnection (socket, url, data) {

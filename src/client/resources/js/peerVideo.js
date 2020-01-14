@@ -40,7 +40,7 @@ const pcConfig = {
 var PeerVideo = Vue.component('PeerVideo', {
   template: `
     <div class="peer_video-container">
-			<video v-bind:id="peer_id" controls playsinline autoplay></video>
+			<video v-bind:id="peer_id" controls playsinline autoplay muted></video>
     </div>
   `,
 
@@ -298,8 +298,15 @@ var PeerVideo = Vue.component('PeerVideo', {
 				this.dataChannel.send(event.target.result)
 				offset += event.target.result.byteLength
 				this.sendProgress.value = offset
-				if (offset < file.size) readSlice()
-				else this.clearSendProgress()
+				if (offset < file.size) {
+					readSlice()
+				} else {
+					this.clearSendProgress()
+					let info = {}
+					info.from = this.my_id
+					info.message = `Sent ${this.filename} to ${this.peer_id}`
+					this.changeProp('recvMessage', info)
+				}
 			})
 	
 			const readSlice = () => {
@@ -315,6 +322,11 @@ var PeerVideo = Vue.component('PeerVideo', {
 			this.filesize = message.filesize
 			this.recvSize = 0
 			this.recvBuffer = []
+
+			let info = {}
+			info.from = this.my_id
+			info.message = `Receiving ${this.filename}(${this.filesize}) from ${this.peer_id}`
+			this.changeProp('recvMessage', info)
 			this.makeRecvProgress(this.filename, this.filesize)
 			this.clearDownloadAnchor()
 		},
@@ -333,6 +345,11 @@ var PeerVideo = Vue.component('PeerVideo', {
 				this.downloadAnchor.download = this.filename
 				this.downloadAnchor.click()
 				this.recvBuffer = []
+
+				let info = {}
+				info.from = this.my_id
+				info.message = `Received ${this.filename} from ${this.peer_id}`
+				this.changeProp('recvMessage', info)
 			}
 		},
 

@@ -61,19 +61,6 @@ input, select {
   background-color: #fff7f8;
 }
 
-#chat_room_container {
-	background-color: #373737;
-	color: white;
-	position: absolute;
-	left: 0;
-	top: 0;
-	z-index: 5;
-	width: 100%;
-	height: 100%;
-  overflow-x: scroll;
-  overflow-y: scroll;
-}
-
 #room_header {
 	padding: 10px 20px;
 }
@@ -145,6 +132,20 @@ td {
 	text-align: center;
 }
 
+#chat_room_container {
+	background-color: #373737;
+	background-color: #ffa3a9;
+	color: white;
+	position: absolute;
+	left: 0;
+	top: 0;
+	z-index: 5;
+	width: 100%;
+	height: 100%;
+  overflow-x: scroll;
+  overflow-y: scroll;
+}
+
 #room_header {
 	font-size: 17px;
 	font-weight: 600;
@@ -152,19 +153,26 @@ td {
 	margin: 10px 10px;
 }
 #room_header button {
-	padding: 0;
+	padding: 0px 10px;
 	margin: 0;
 }
 
 #chat_room {
-	margin: auto;
+	width: 100%;
+	background-color: #474747;
+	background-color: #ffb3b9;
+	padding-bottom: 10px;
 	display: grid;
 	grid-template-rows:  auto auto;
-	grid-template-columns: 2 1fr;
+	grid-template-columns: auto auto;
 	grid-template-areas: "peers peers" "mycam utils";
 }
 #peers {
-	width: 100%;
+	width: calc(100% - 40px);
+	min-height: 500px; 
+	margin: 20px;
+	background-color: #575757;
+	background-color: #ffc3c9;
 	display: grid;
 	grid-template-rows: 2 1fr;
 	grid-template-columns: 2 1fr;
@@ -172,7 +180,6 @@ td {
 }
 
 .peer_video-container {
-	float: center;
 	margin: 5px 5px;
 }
 
@@ -188,6 +195,7 @@ td {
 .control-panel .icon-btn {
 	height: 20px;
 	margin: 0px;
+	background-color: inherit;
 	margin-left: 10px;
 	padding: 0px;
 	float: left;
@@ -195,40 +203,52 @@ td {
 input[type=file] {
 	display: none;
 }
+
+#share_video_div {
+	display: none;
+	position: absolute;
+	z-index: 9;
+	left: 50%;
+	top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#share_audio_div {
+	display: none;
+	position: absolute;
+	z-index: 9;
+	left: 50%;
+	top: 50%;
+  transform: translate(-50%, -50%);
+}
+
 #my_camera {
 	grid-area: mycam;
 }
 #shares {
 	grid-area: utils;
+	background-color: #676767;
 	width: 480px;
 }
 #share_text {
 	width: 100%;
-	height: 450px;
 	margin-top: 20px;
+	height: 435px;
 	overflow-y: auto;
 	overflow-x: hidden;
-	background-color: #575757;
 	word-wrap: break-word;
-}
-.my-name {
-	width: 100%;
-	min-width: 100%;
-	max-width: 100%;
 }
 .my-name .name {
-	width: 100%;
-	min-width: 100%;
-	max-width: 100%;
-	position: relative;
 	text-align: right;
-	padding: 2px 20px;
+	padding: 2px 30px;
 }
 .my-message {
-	width: 100%;
-	min-width: 100%;
-	max-width: 100%;
-	word-wrap: break-word;
+	float: none;
+}
+.my-message::after {
+	content: '';
+	display: table;
+	clear: both;
 }
 .my-message .my-talk {
 	position: relative;
@@ -236,9 +256,9 @@ input[type=file] {
 	max-width: 70%;
 	word-wrap: break-word;
 	padding: 2px 20px;
-	margin: 0px 50px;
+	margin-right: 50px;
 	background: #91bd00;
-	/*border-radius: .4em;*/
+	border-radius: .4em;
 }
 .my-message .my-talk:after {
 	content: '';
@@ -254,20 +274,27 @@ input[type=file] {
 	margin-top: -5px;
 	margin-right: -5px;
 }
+.peer-name .name {
+	position: relative;
+	padding: 2px 30px;
+}
 .peer-message {
 	width: 100%;
-	word-wrap: break-word;
 }
-.peer-message .name {
-	position: relative;
-	padding: 2px 20px;
+.peer-message::after {
+	content: '';
+	display: table;
+	clear: both;
 }
 .peer-message .peer-talk {
 	position: relative;
+	float: left;
+	max-width: 70%;
 	padding: 2px 20px;
 	margin: 0px 50px;
 	background: #ea6cd3;
-	/*border-radius: .4em;*/
+	word-wrap: break-word;
+	border-radius: .4em;
 }
 .peer-message .peer-talk:after {
   content: '';
@@ -288,8 +315,8 @@ input[type=file] {
 	margin-bottom: 10px;
 }
 #message_box input {
-	margin: 10px 0px;
-	width: 100%;
+	margin: 10px;
+	width: calc(100% - 20px);
 	padding: 5px;
 	padding-right: 100px;
 	border: none;
@@ -314,15 +341,37 @@ input[type=file] {
 	padding: 2px;
 }
 
+.drag-target {
+	width: 100%;
+	height: 30px;
+	background-color: navy;
+}
+.drag-target button {
+	margin: 0px 10px;
+	padding: 5px;
+	background-color: inherit;
+}
+
 video {
-  background-color: #373737;
-	width: 360px;
-	height: 480px;
+	background-color: #575757;
+	background-color: #ffc3c9;
+	margin: auto;
+	width: 380px;
+	height: 500px;
 	padding: 10px 10px;
+}
+audio {
+	margin: auto;
 }
 
 #shares {
-	position: relative;
+}
+#shares video {
+	background-color: #575757;
+	background-color: #ffc3c9;
+	width: 600px;
+	height: 338px;
+	padding: 0;
 }
 
 div.progress {
@@ -330,7 +379,8 @@ div.progress {
 	padding: 0px 50px;
 }
 progress {
-	width: 100%;
+	width: 80%;
+	margin: auto;
 }
 
 .alert-container {

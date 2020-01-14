@@ -29,7 +29,7 @@ Vue.component('my-video', {
 
 	mounted () {
 		this.myVideo = document.getElementById('myVideo')
-		this.getVideoStream()
+		// this.getVideoStream()
 	},
 
   beforeDestroy () {
@@ -37,16 +37,10 @@ Vue.component('my-video', {
 	},
 
   methods: {
-		getVideoStream () {
+		getVideoStream (callback) {
 			const constraints = {
-				video: {
-					width: 480,
-					height: 360,
-					frameRate: 20
-				},
-				audio: {
-					channelCount: 1
-				}
+				video: true,
+				audio: true
 			}
 
 			if (navigator.getUserMedia && navigator.appVersion.indexOf('SamsungBrowser') <= 0) {
@@ -54,6 +48,7 @@ Vue.component('my-video', {
 					.then((stream) => {
 						this.camStream = stream
 						this.$emit('video_info', true, this.camStream, true)
+						callback()
 					})
 					.catch((err) => {
 						this.log(err)
@@ -64,6 +59,7 @@ Vue.component('my-video', {
 						this.camStream = this.myVideo.captureStream(fps)
 						this.$emit('video_info', true, this.camStream, true)
 						// this.$emit('video_info', false, undefined, true)
+						callback()
 					})
 			} else {
 				this.log('navigator.getUserMedia failed')
@@ -74,22 +70,34 @@ Vue.component('my-video', {
 				this.camStream = this.myVideo.captureStream(fps)
 				this.$emit('video_info', true, this.camStream, true)
 				// this.$emit('video_info', false, undefined, true)
+				callback()
 			}
 		},
 
 		start () {
-			try {
+			this.getVideoStream(() => {
+				try {
+					if ('' === this.myVideo.src) this.myVideo.srcObject = this.camStream
+					this.myVideo.play()
+				} catch(e) {
+					this.log(e.message || e)
+				}
+			})
+			/*try {
 				if ('' === this.myVideo.src) this.myVideo.srcObject = this.camStream
 				this.myVideo.play()
 			} catch(e) {
 				this.log(e.message || e)
-			}
+			}*/
 		},
 
 		stop () {
 			try {
 				this.myVideo.pause()
 				if ('' === this.myVideo.src) this.myVideo.srcObject = undefined
+				
+				this.camStream.getTracks().forEach(track => track.stop())
+				this.camStream = undefined
 			} catch(e) {
 				this.log(e)
 			}

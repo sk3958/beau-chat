@@ -25,7 +25,6 @@ let vue = new Vue({
     my_room: { users: {} },
     my_room_id: '',
     my_room_name: '',
-    my_room_member_count: 0,
     peerVideos: [],
     log: undefined,
     dummy: 0,
@@ -107,6 +106,9 @@ let vue = new Vue({
     this.socket.on('enterRoom', (data) => {
       this.enterRoom(JSON.parse(data))
     })
+		this.socket.on('newMemberIsReady', (data) => {
+			this.readyForNewMember(JSON.parse(data))
+		})
     this.socket.on('doneReadyForNewMember', (data) => {
 			var user = this.my_room.users[JSON.parse(data).from]
 			if (undefined !== user) this.addPeerVideo(user, true)
@@ -179,20 +181,22 @@ let vue = new Vue({
         this.my_room = room
         this.my_room_id = room.roomId
         this.my_room_name = room.roomName
-
-      } else if (data.roomId === this.my_room_id) {
-        this.addPeerVideo(data, false)
-        this.my_room_member_count = room.userCount
       }
 
       this.updateUserList(data)
       this.updateRoomList()
     },
 
+		readyForNewMember (data) {
+			if (this.my_id === data.userId) return
+			if (this.my_room_id === data.roomId) {
+      	this.addPeerVideo(data, false)
+			}
+		},
+
     leaveRoom (data) {
       if (data.roomId === this.my_room_id && data.user.userId !== this.my_id) {
         this.removePeerVideo(data.user.userId)
-        this.my_room_member_count--
       }
 
       var room = this.rooms[data.roomId]
@@ -264,6 +268,11 @@ let vue = new Vue({
 				this.camStream = stream
 			} else {
 				this.camStream = undefined
+			}
+
+			if (0 === this.peerVideos.length) {
+				this.socket.emit('newMemberIsReady',
+					JSON.stringify({ userId: this.my_id, roomId: this.my_room_id }))
 			}
     },
 
