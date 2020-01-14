@@ -5,7 +5,6 @@ body {
 	overflow-y: scroll; 
 	text-rendering: optimizeLegibility;
 	color: #373737;
-	background-color: #f4f4f4;
 	background-color: #ffd3d9;
 }
 
@@ -133,8 +132,7 @@ td {
 }
 
 #chat_room_container {
-	background-color: #373737;
-	background-color: #ffa3a9;
+	background-color: #ffd3d9;
 	color: white;
 	position: absolute;
 	left: 0;
@@ -147,10 +145,10 @@ td {
 }
 
 #room_header {
+	background-color: #373737;
 	font-size: 17px;
 	font-weight: 600;
 	padding-top: 20px;
-	margin: 10px 10px;
 }
 #room_header button {
 	padding: 0px 10px;
@@ -159,8 +157,7 @@ td {
 
 #chat_room {
 	width: 100%;
-	background-color: #474747;
-	background-color: #ffb3b9;
+	background-color: #ffc3c9;
 	padding-bottom: 10px;
 	display: grid;
 	grid-template-rows:  auto auto;
@@ -171,8 +168,7 @@ td {
 	width: calc(100% - 40px);
 	min-height: 500px; 
 	margin: 20px;
-	background-color: #575757;
-	background-color: #ffc3c9;
+	background-color: #ffb3b9;
 	display: grid;
 	grid-template-rows: 2 1fr;
 	grid-template-columns: 2 1fr;
@@ -353,8 +349,7 @@ input[type=file] {
 }
 
 video {
-	background-color: #575757;
-	background-color: #ffc3c9;
+	background-color: #ffa3a9;
 	margin: auto;
 	width: 380px;
 	height: 500px;

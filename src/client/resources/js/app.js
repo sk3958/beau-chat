@@ -1,4 +1,3 @@
-
 let vue = new Vue({
   el: '#app',
   data: {
@@ -25,6 +24,7 @@ let vue = new Vue({
     my_room: { users: {} },
     my_room_id: '',
     my_room_name: '',
+		invitedId: '',
     peerVideos: [],
     log: undefined,
     dummy: 0,
@@ -42,7 +42,10 @@ let vue = new Vue({
     this.my_name = info.userName
     this.my_type = info.userType
     this.log = this.myLog
-    this.socket = io('', { autoConnect: false })
+    this.socket = io('', {
+			autoConnect: false,
+			transports: ['websocket']
+		})
 
     window.addEventListener('beforeunload', (e) => {
 			e.preventDefault()
@@ -62,9 +65,11 @@ let vue = new Vue({
 			this.socket.emit('roomList')
 			this.socket.emit('userList')
 		})
+
 		this.socket.on('connect_error', (error) => {
 			this.showMessage(error.message || 'cannot connect to server')
 		})
+
 		this.socket.on('disconnect', (reason) => {
 			// 'io server disconnect', 'io client disconnect', 'ping timeout'
 			if ('io client disconnect' !== reason) {
@@ -73,55 +78,81 @@ let vue = new Vue({
 				}, 5000)
 			}
 		})
+
     this.socket.on('addUser', (data) => {
       var user = JSON.parse(data)
       this.users[user.userId] = user
       this.updateUserList()
     })
+
     this.socket.on('deleteUser', (data) => {
       var user = JSON.parse(data)
       delete this.users[user.userId]
       this.updateUserList()
     })
+
     this.socket.on('roomList', (data) => {
       var roomList = JSON.parse(data)
       this.rooms = roomList
       this.room_count = Object.keys(this.rooms).length
     })
+
     this.socket.on('userList', (data) => {
       var userList = JSON.parse(data)
       this.users = userList
 			this.updateUserList()
     })
+
     this.socket.on('createRoom', (data) => {
       var room = JSON.parse(data)
       this.rooms[room.roomId] = room
       this.room_count = Object.keys(this.rooms).length
     })
+
     this.socket.on('deleteRoom', (data) => {
       var room = JSON.parse(data)
       delete this.rooms[room.roomId]
       this.room_count = Object.keys(this.rooms).length
     })
+
     this.socket.on('enterRoom', (data) => {
       this.enterRoom(JSON.parse(data))
     })
+
 		this.socket.on('newMemberIsReady', (data) => {
 			this.readyForNewMember(JSON.parse(data))
 		})
+
     this.socket.on('doneReadyForNewMember', (data) => {
 			var user = this.my_room.users[JSON.parse(data).from]
 			if (undefined !== user) this.addPeerVideo(user, true)
     })
+
     this.socket.on('leaveRoom', (data) => {
       this.leaveRoom(JSON.parse(data))
     })
+
     this.socket.on('invitedRoom', (data) => {
       this.invitedRoom(JSON.parse(data))
     })
+
+		this.socket.on('acceptInvite', (data) => {
+			this.makePrivateRoom(JSON.parse(data))
+		})
+
     this.socket.on('refusedInvite', (data) => {
       this.refusedInvite(JSON.parse(data))
     })
+
+    this.socket.on('roomIsReady', (data) => {
+			if (this.is_room) return
+      this.socket.emit('enterRoom',
+				JSON.stringify({
+					userId: this.my_id,
+					roomId: JSON.parse(data).roomId
+				}))
+    })
+
     this.socket.on('requestFail', (data) => {
       this.showMessage('requestFail', 'Notification', JSON.parse(data).message)
     })
@@ -186,6 +217,18 @@ let vue = new Vue({
       this.updateUserList(data)
       this.updateRoomList()
     },
+
+		makePrivateRoom (data) {
+this.log('make private room')
+			if (this.is_room) {
+				this.socket.emit('canceledInvite', JSON.stringify({ from: this.my_id, to: data.from }))
+
+				return
+			}
+
+			this.invitedId = data.from
+      this.socket.emit('createRoom', JSON.stringify({ roomName: 'Private', roomDesc: 'Private', maxUser: 2 }))
+		},
 
 		readyForNewMember (data) {
 			if (this.my_id === data.userId) return
@@ -270,6 +313,15 @@ let vue = new Vue({
 				this.camStream = undefined
 			}
 
+			if ('' !== this.invitedId) {
+				this.socket.emit('roomIsReady',
+					JSON.stringify({
+						from: this.my_id,
+						to: this.invitedId,
+						roomId: this.my_room_id
+					}))
+				this.invitedId = ''
+			}
 			if (0 === this.peerVideos.length) {
 				this.socket.emit('newMemberIsReady',
 					JSON.stringify({ userId: this.my_id, roomId: this.my_room_id }))
@@ -331,7 +383,7 @@ let vue = new Vue({
       switch(msg.origin) {
 				case 'invitedRoom':
 					this.socket.emit('acceptInvite',
-						JSON.stringify({ inviteId: msg.data.user.userId, invitedId: this.my_id }))
+						JSON.stringify({ to: msg.data.user.userId, from: this.my_id }))
 					break
 				default:
 					break

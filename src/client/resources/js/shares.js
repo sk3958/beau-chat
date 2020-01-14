@@ -110,7 +110,7 @@ Vue.component('shares', {
 		this.chatInput = document.getElementById('chat_input')
 		this.sendFileSelector = document.getElementById('file_file')
 		this.createObserver()
-		this.setDragEvent()
+		this.setEvents()
 		this.setVideoEvent()
 	},
 
@@ -246,7 +246,20 @@ Vue.component('shares', {
 			this.shareText.scrollTop = this.shareText.scrollHeight
 		},
 
-		setDragEvent () {
+		setEvents () {
+			this.shareVideo.addEventListener('loadedmetadata', (event) => {
+				let width = this.shareVideo.videoWidth
+				let height = this.shareVideo.videoHeight
+
+				if (0 === width) {
+					//this.shareVideo.style.height = '100px'
+					return
+				}
+
+				this.shareVideo.style.width = width + 'px'
+				this.shareVideo.style.height = height + 'px'
+			})
+
       const onMouseDown = (e) => {
 				this.dragTarget = e.target
 				this.xEventPos = e.clientX

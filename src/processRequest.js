@@ -34,7 +34,7 @@ var processRequest = function (io, socket, url, data) {
       enterRoom(io, socket, data)
       break
     case 'newMemberIsReady':
-      relayRoomData(io, 'newMemberIsReady', data)
+      relayRoomData(socket, 'newMemberIsReady', data)
       break
     case 'doneReadyForNewMember':
       relayData('doneReadyForNewMember', data)
@@ -46,10 +46,16 @@ var processRequest = function (io, socket, url, data) {
       inviteRoom(socket, data)
       break
     case 'acceptInvite':
-      acceptInvite(io, socket, data)
+      relayData('acceptInvite', data)
       break
     case 'refuseInvite':
       refuseInvite(socket, data)
+      break
+    case 'canceledInvite':
+      relayData('canceledInvite', data)
+      break
+    case 'roomIsReady':
+      relayData('roomIsReady', data)
       break
     case 'pcSignaling':
       relayData('pcSignaling', data)
@@ -145,9 +151,14 @@ function inviteRoom (socket, data) {
   }
 }
 
-function acceptInvite (io, socket, data) {
+/*function acceptInvite (io, socket, data) {
   var inviteUser = User.getUser(data.inviteId)
   var invitedUser = User.getUser(data.invitedId)
+
+	if (!inviteUser) {
+    socket.emit('requestFail', JSON.stringify({ message: `${data.inviteId} has logged out.` }))
+		return false
+	}
 
 	if (User.isUser(inviteUser) && '' !== inviteUser.roomId) {
     socket.emit('requestFail', JSON.stringify({ message: `${inviteUser.userName}(${inviteUser.userId}) is in another room already.` }))
@@ -161,7 +172,7 @@ function acceptInvite (io, socket, data) {
 	})
 
 	enterRoom(io, socket, { roomId: inviteUser.roomId, userId: data.invitedId })
-}
+}*/
 
 function refuseInvite (socket, data) {
   var inviteUser = User.getUser(data.inviteId)
@@ -178,11 +189,12 @@ function relayData (message, data) {
       user.socket.emit(message, JSON.stringify(data))
     }
   } catch(e) {
+		console.log(e)
   }
 }
 
-function relayRoomData (io, message, data) {
-	io.to(data.roomId).emit(message, JSON.stringify(data))
+function relayRoomData (socket, message, data) {
+	socket.broadcast.to(data.roomId).emit(message, JSON.stringify(data))
 }
 
 function isValidConnection (socket, url, data) {
