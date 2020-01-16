@@ -2,9 +2,9 @@ Vue.component('shares', {
   template: `
     <div id="shares">
 			<div class="control-panel">
-				<button type="button" class="icon-btn" v-on:click="openFileSelector">Open</button>
-				<button type="button" class="icon-btn" v-on:click="broadcastMedia">Share</button>
-				<button type="button" class="icon-btn" v-on:click="showChatBox">chat</button>
+				<button v-show="this.shareState !== 'receiving'" type="button" class="icon-btn" v-on:click="openFileSelector">share</button>
+				<!--<button type="button" class="icon-btn" v-on:click="broadcastMedia">Share</button>
+				<button type="button" class="icon-btn" v-on:click="showChatBox">chat</button>-->
 				<span id="file_name">{{ this.fileName }}</span>
 				<input type="file" id="stream_file" accept="audio/*|video/*" v-on:change="openFile">
 			</div>
@@ -58,6 +58,7 @@ Vue.component('shares', {
 
   data: function () {
     return {
+			shareState: '',
 			srcStream: undefined,
 			fileName: '',
 			fileOpener: undefined,
@@ -128,7 +129,7 @@ Vue.component('shares', {
 		clear () {
 			try {
 				this.clearShareVideo()
-				this.clearShareVideo()
+				this.clearShareAudio()
 				this.messages = []
 			} catch(e) {
 				this.log(e)
@@ -151,6 +152,7 @@ Vue.component('shares', {
 				this.log(e.message || e.stack || e)
 			}
 
+			this.setShareState('')
 			this.fileName = ''
 			this.fileOpener.value = ''
 			this.shareVideoDiv.style.display = 'none'
@@ -165,11 +167,18 @@ Vue.component('shares', {
 				this.shareAudio.src = ''
 			}
 
+			this.setShareState('')
 			this.fileName = ''
 			this.fileOpener.value = ''
 			this.shareAudioDiv.style.display = 'none'
 			this.srcStream = undefined
 			this.$emit('change_prop', 'shareStream', this.srcStream)
+		},
+
+		setShareState (state) {
+			if (state === this.shareState) return
+
+			this.shareState = state
 		},
 
 		openFileSelector () {
@@ -188,6 +197,7 @@ Vue.component('shares', {
 				return false
 			}
 
+			this.setShareState('sending')
 			let URL = window.URL || window.webkitURL
 			let fileUrl = URL.createObjectURL(file)
 			this.shareVideo.src = fileUrl
@@ -247,19 +257,6 @@ Vue.component('shares', {
 		},
 
 		setEvents () {
-			this.shareVideo.addEventListener('loadedmetadata', (event) => {
-				let width = this.shareVideo.videoWidth
-				let height = this.shareVideo.videoHeight
-
-				if (0 === width) {
-					//this.shareVideo.style.height = '100px'
-					return
-				}
-
-				this.shareVideo.style.width = width + 'px'
-				this.shareVideo.style.height = height + 'px'
-			})
-
       const onMouseDown = (e) => {
 				this.dragTarget = e.target
 				this.xEventPos = e.clientX
@@ -357,6 +354,16 @@ Vue.component('shares', {
 
 		setVideoEvent () {
 			video = this.shareVideo
+			video.addEventListener('loadedmetadata', (event) => {
+				let width = video.videoWidth
+				let height = video.videoHeight
+
+				if (0 < width && 0 < height) {
+					video.style.width = width + 'px'
+					video.style.height = height + 'px'
+				}
+			})
+
 			/*video.addEventListener('ended', () => {
 				this.clearShareVideo()
 			})*/
@@ -364,6 +371,12 @@ Vue.component('shares', {
 			/*video.addEventListener('play', () => {
 				if (undefined === this.srcStream) this.broadcastMedia()
 			})*/
+
+			video.addEventListener('playing', () => {
+				if ('sending' !== this.shareState) this.setShareState('receiving')
+
+				if ('sending' === this.shareState) this.broadcastMedia()
+			})
 
 		},
 

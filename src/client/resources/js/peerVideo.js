@@ -39,8 +39,9 @@ const pcConfig = {
 
 var PeerVideo = Vue.component('PeerVideo', {
   template: `
-    <div class="peer_video-container">
-			<video v-bind:id="peer_id" controls playsinline autoplay muted></video>
+    <div class="peer-video-container">
+			<video v-show="this.peerHasVideo" v-bind:id="peer_id" controls playsinline autoplay muted></video>
+			<canvas v-show="!this.peerHasVideo" class="no_peer_camera"></canvas>
     </div>
   `,
 
@@ -62,6 +63,8 @@ var PeerVideo = Vue.component('PeerVideo', {
 			pc: undefined,
 			peerVideo: undefined,
 			dataChannel: undefined,
+			peerHasVideo: false,
+			peerCamStreamId: undefined,
 			log: undefined,
 			changeProp: undefined,
 			showMessage: undefined,
@@ -111,6 +114,18 @@ var PeerVideo = Vue.component('PeerVideo', {
 
 		processSignaling (data) {
 			switch (data.message) {
+				case 'videoInfo':
+					this.peerHasVideo = data.hasVideo
+					this.peerCamStreamId = data.streamId
+					if (!this.peerHasVideo) this.drawNoCamera()
+					this.sendVideoInfo(true)
+					break
+				case 'replyVideoInfo':
+					this.peerHasVideo = data.hasVideo
+					this.peerCamStreamId = data.streamId
+					if (!this.peerHasVideo) this.drawNoCamera()
+					this.createOffer()
+					break
 				case 'offer':
 					this.createAnswer(data)
 					break
@@ -125,6 +140,13 @@ var PeerVideo = Vue.component('PeerVideo', {
 			}
 		},
 
+		drawNoCamera () {
+			let canvas = this.peerVideo.parentElement.querySelector('.no_peer_camera')
+			let ctx = canvas.getContext('2d')
+			ctx.fillStyle = '#f1f1f1'
+			ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight)
+		},
+
 		sendDoneReadyForNewMember () {
 			this.socket.emit('doneReadyForNewMember',
 				JSON.stringify({ from: this.my_id, to: this.peer_id }))
@@ -136,7 +158,7 @@ var PeerVideo = Vue.component('PeerVideo', {
 
 		async createPC () {
 			if (undefined === this.pc) this.pc = new RTCPeerConnection(pcConfig)
-			if (this.has_video) {
+			if (this.camStream) {
 				this.camStream.getTracks().forEach(track => 
 					this.pc.addTrack(track, this.camStream))
 			}
@@ -166,7 +188,7 @@ var PeerVideo = Vue.component('PeerVideo', {
 			this.pc.ontrack = (event) => {
 				if (event.streams[0] === this.peerVideo.srcObject) {
 					this.peerVideo.srcObject = event.streams[0]
-				} else if (undefined === this.peerVideo.srcObject || null === this.peerVideo.srcObject) {
+				} else if (this.peerHasVideo && (undefined === this.peerVideo.srcObject || null === this.peerVideo.srcObject)) {
 					this.peerVideo.srcObject = event.streams[0]
 				} else {
 					this.showMovieMusicPlayer(event.streams[0])
@@ -177,21 +199,41 @@ var PeerVideo = Vue.component('PeerVideo', {
 				this.dataChannel = this.pc.createDataChannel('DataChnnel')
 				this.dataChannel.binaryType = 'arraybuffer'
 				this.dataChannel.onmessage = this.onPeerMessage
-				this.createOffer()
+				this.dataChannel.onopen = this.onDataChannelOpen
+				this.sendVideoInfo(false)
 			} else {
 				this.pc.ondatachannel = (event) => {
 					this.dataChannel = event.channel
 					this.dataChannel.binaryType = 'arraybuffer'
 					this.dataChannel.onmessage = this.onPeerMessage
+				  this.dataChannel.onopen = this.onDataChannelOpen
 				}
 			}
 
-			if (!this.offer) this.sendDoneReadyForNewMember()
+			if (!this.offer) {
+				this.sendDoneReadyForNewMember()
+			}
+		},
+
+		sendVideoInfo (isReply) {
+			let data = {
+				message : isReply ? 'replyVideoInfo' : 'videoInfo',
+				hasVideo: this.has_video,
+				streamId: this.has_video ? this.camStream.id : 'none',
+				from: this.my_id,
+				to: this.peer_id
+			}
+			this.sendSignalingData(data)
 		},
 
 		async createOffer () {
+			let option = {
+				offerToReceiveAudio: true,
+				offerToReceiveVideo: true
+			}
+
 			try {
-				let desc = await this.pc.createOffer()
+				let desc = await this.pc.createOffer(option)
 				await this.pc.setLocalDescription(desc)
 				let data = {
 					message : 'offer',
@@ -267,14 +309,21 @@ var PeerVideo = Vue.component('PeerVideo', {
 			player.play()
 		},
 
+		onDataChannelOpen () {
+		},
+
 		onPeerMessage (event) {
 			try {
 				let message = JSON.parse(event.data)
 				if ('message' === message.type) this.changeProp('recvMessage', message)
 				else if ('file' === message.type) this.prepareRecvFile(message)
+				else if ('info' === message.type) this.onPeerInfo(message)
 			} catch (e) {
 				this.recvFile(event.data)
 			}
+		},
+
+		onPeerInfo (info) {
 		},
 
 		sendMessageToPeer (message) {

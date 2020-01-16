@@ -13,7 +13,7 @@ Vue.component('rooms-info', {
     return {
       room_name: '',
       room_desc: '',
-			max_user: 6
+			max_user: 2
     }
   },
 

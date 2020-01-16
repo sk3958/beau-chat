@@ -1,9 +1,10 @@
 Vue.component('my-video', {
   template: `
     <div id="my_video">
-			<video id="myVideo" controls playsinline muted>
+			<video v-show="this.hasVideo" id="myVideo" autoplay controls playsinline muted>
 				You have no camera or this browser does not support video tag.
 			</video>
+			<canvas v-show="!this.hasVideo" id="no_camera"></canvas>
     </div>
   `,
 
@@ -15,7 +16,9 @@ Vue.component('my-video', {
 
   data: function () {
     return {
+			hasVideo: false,
 			myVideo: undefined,
+			noCamera: undefined,
 			camStream: undefined
     }
   },
@@ -29,7 +32,7 @@ Vue.component('my-video', {
 
 	mounted () {
 		this.myVideo = document.getElementById('myVideo')
-		// this.getVideoStream()
+		this.noCamera = document.getElementById('no_camera')
 	},
 
   beforeDestroy () {
@@ -47,48 +50,40 @@ Vue.component('my-video', {
 				navigator.mediaDevices.getUserMedia(constraints)
 					.then((stream) => {
 						this.camStream = stream
-						this.$emit('video_info', true, this.camStream, true)
+						this.hasVideo = true
+						this.$emit('video_info', this.hasVideo, this.camStream, true)
 						callback()
 					})
 					.catch((err) => {
 						this.log(err)
-						this.myVideo.autoplay = false
-						this.myVideo.loop = true
-						this.myVideo.src = './chrome.mp4'
-						var fps = 0
-						this.camStream = this.myVideo.captureStream(fps)
-						this.$emit('video_info', true, this.camStream, true)
-						// this.$emit('video_info', false, undefined, true)
+						this.hasVideo = false
+						this.drawNoCamera()
+						this.$emit('video_info', this.hasVideo, this.camStream, true)
 						callback()
 					})
 			} else {
 				this.log('navigator.getUserMedia failed')
-				this.myVideo.autoplay = false
-				this.myVideo.loop = true
-				this.myVideo.src = './chrome.mp4'
-				var fps = 0
-				this.camStream = this.myVideo.captureStream(fps)
-				this.$emit('video_info', true, this.camStream, true)
-				// this.$emit('video_info', false, undefined, true)
+				this.hasVideo = false
+				this.drawNoCamera()
+				this.$emit('video_info', this.hasVideo, this.camStream, true)
 				callback()
 			}
+		},
+
+		drawNoCamera () {
+			let ctx = this.noCamera.getContext('2d')
+			ctx.fillStyle = '#f1f1f1'
+			ctx.fillRect(0, 0, this.noCamera.clientWidth, this.noCamera.clientHeight)
 		},
 
 		start () {
 			this.getVideoStream(() => {
 				try {
-					if ('' === this.myVideo.src) this.myVideo.srcObject = this.camStream
-					this.myVideo.play()
+					if (undefined !== this.camStream) this.myVideo.srcObject = this.camStream
 				} catch(e) {
 					this.log(e.message || e)
 				}
 			})
-			/*try {
-				if ('' === this.myVideo.src) this.myVideo.srcObject = this.camStream
-				this.myVideo.play()
-			} catch(e) {
-				this.log(e.message || e)
-			}*/
 		},
 
 		stop () {

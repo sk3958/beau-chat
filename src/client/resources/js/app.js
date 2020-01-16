@@ -183,8 +183,8 @@ let vue = new Vue({
     },
 
     removePeerVideo (userId) {
-      var elem = document.getElementById(userId).parentElement
-      this.$refs.peers.removeChild(elem)
+      var elem = document.getElementById(userId)
+			if (undefined !== elem && null !== elem) this.$refs.peers.removeChild(elem.parentElement)
 
 			this.peerVideos.forEach((peerVideo, index) => {
 				if (peerVideo.peer_id === userId) {
@@ -219,7 +219,6 @@ let vue = new Vue({
     },
 
 		makePrivateRoom (data) {
-this.log('make private room')
 			if (this.is_room) {
 				this.socket.emit('canceledInvite', JSON.stringify({ from: this.my_id, to: data.from }))
 
@@ -307,11 +306,7 @@ this.log('make private room')
 			}
 
 			this.has_video = hasVideo
-			if (hasVideo) {
-				this.camStream = stream
-			} else {
-				this.camStream = undefined
-			}
+			this.camStream = stream
 
 			if ('' !== this.invitedId) {
 				this.socket.emit('roomIsReady',
@@ -321,8 +316,7 @@ this.log('make private room')
 						roomId: this.my_room_id
 					}))
 				this.invitedId = ''
-			}
-			if (0 === this.peerVideos.length) {
+			} else if (0 === this.peerVideos.length) {
 				this.socket.emit('newMemberIsReady',
 					JSON.stringify({ userId: this.my_id, roomId: this.my_room_id }))
 			}

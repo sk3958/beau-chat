@@ -157,7 +157,6 @@ td {
 
 #chat_room {
 	width: 100%;
-	background-color: #ffc3c9;
 	padding-bottom: 10px;
 	display: grid;
 	grid-template-rows:  auto auto;
@@ -168,7 +167,7 @@ td {
 	width: calc(100% - 40px);
 	min-height: 500px; 
 	margin: 20px;
-	background-color: #ffb3b9;
+	/*background-color: #ffb3b9;*/
 	display: grid;
 	grid-template-rows: 2 1fr;
 	grid-template-columns: 2 1fr;
@@ -206,7 +205,7 @@ input[type=file] {
 	z-index: 9;
 	left: 50%;
 	top: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -10%);
 }
 
 #share_audio_div {
@@ -355,6 +354,14 @@ video {
 	height: 500px;
 	padding: 10px 10px;
 }
+canvas {
+	background-color: #ffa3a9;
+	margin: auto;
+	width: 380px;
+	height: 500px;
+	padding: 10px 10px;
+}
+
 audio {
 	margin: auto;
 }
