@@ -235,7 +235,7 @@ Vue.component('shares', {
 			let file = this.sendFileSelector.files[0]
 			let message = {}
 			message.type = 'message'
-			message.from = 'me'
+			message.from = this.my_id
 			message.message = `sending file ${file.name}(size: ${file.size})`
 			this.messages.push(message)
 			this.messageCount = this.messages.length

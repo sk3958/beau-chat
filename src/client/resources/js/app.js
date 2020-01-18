@@ -67,7 +67,8 @@ let vue = new Vue({
 		})
 
 		this.socket.on('connect_error', (error) => {
-			this.showMessage(error.message || 'cannot connect to server')
+			console.log(error)
+			//this.showMessage(error.stack || error.message || 'cannot connect to server')
 		})
 
 		this.socket.on('disconnect', (reason) => {

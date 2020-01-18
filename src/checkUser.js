@@ -8,7 +8,6 @@ async function setUser (req, res, isRootUrl) {
   if (session.logined && session.user_id.length > 0 && session.user_kind.length === 2) {
 		addUser(session)
 		if (isRootUrl) {
-			//res.redirect('https://192.168.219.100:3002/classroom')
 			res.redirect('/classroom')
 		} else {
 			res.render('chat.html', session)
@@ -39,7 +38,6 @@ async function setUser (req, res, isRootUrl) {
       await redisClient.del(user_id)
 
 			addUser(session)
-			//res.redirect('https://192.168.219.100:3002/classroom')
 			res.redirect('/classroom')
       return true
     }

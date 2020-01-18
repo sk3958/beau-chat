@@ -1,13 +1,11 @@
 class User {
   static userList = {}
 
-  constructor (userId, userName, userType, socket = null) {
+  constructor (userId, userName, userType, socketId) {
     this.userId = userId
     this.userName = userName
     this.userType = userType
-    this.socket = socket || null
-    this.socketId = null === this.socket ? null : socket.id
-    this.status = 0
+    this.socketId = socketId
     this.roomId = '' 
 
     User.userList[this.userId] = this
@@ -47,9 +45,7 @@ class User {
     return (user.hasOwnProperty('userId') &&
       user.hasOwnProperty('userName') &&
       user.hasOwnProperty('userType') &&
-      user.hasOwnProperty('socket') &&
       user.hasOwnProperty('socketId') &&
-      user.hasOwnProperty('status') &&
       user.hasOwnProperty('roomId'))
   }
 }

@@ -353,7 +353,7 @@ var PeerVideo = Vue.component('PeerVideo', {
 					this.clearSendProgress()
 					let info = {}
 					info.from = this.my_id
-					info.message = `Sent ${this.filename} to ${this.peer_id}`
+					info.message = `Sent ${file.name} to ${this.peer_id}`
 					this.changeProp('recvMessage', info)
 				}
 			})

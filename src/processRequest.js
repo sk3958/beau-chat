@@ -1,7 +1,7 @@
-var User = require('./user')
-var Room = require('./room')
+const User = require('./user')
+const Room = require('./room')
 
-var processRequest = function (io, socket, url, data) {
+const processRequest = function (io, socket, url, data) {
 	/*if (!isValidConnection(socket, url, data)) {
 		socket.disconnect()
 		console.warn('Invalid connection detected: ',url, socket.handshake)
@@ -37,7 +37,7 @@ var processRequest = function (io, socket, url, data) {
       relayRoomData(socket, 'newMemberIsReady', data)
       break
     case 'doneReadyForNewMember':
-      relayData('doneReadyForNewMember', data)
+      relayData('doneReadyForNewMember', socket, data)
       break
     case 'leaveRoom':
       leaveRoom(io, socket, data)
@@ -46,19 +46,19 @@ var processRequest = function (io, socket, url, data) {
       inviteRoom(socket, data)
       break
     case 'acceptInvite':
-      relayData('acceptInvite', data)
+      relayData('acceptInvite', socket, data)
       break
     case 'refuseInvite':
       refuseInvite(socket, data)
       break
     case 'canceledInvite':
-      relayData('canceledInvite', data)
+      relayData('canceledInvite', socket, data)
       break
     case 'roomIsReady':
-      relayData('roomIsReady', data)
+      relayData('roomIsReady', socket, data)
       break
     case 'pcSignaling':
-      relayData('pcSignaling', data)
+      relayData('pcSignaling', socket, data)
       break
     case 'log':
       debugClient(data)
@@ -70,7 +70,7 @@ var processRequest = function (io, socket, url, data) {
 }
 
 function addUser (io, socket, data) {
-  var user = new User(data.userId, data.userName, data.userType, socket)
+  var user = new User(data.userId, data.userName, data.userType, socket.id)
   io.sockets.emit('addUser', JSON.stringify(user.info))
 }
 
@@ -104,7 +104,7 @@ function createRoom (io, socket, data) {
   var user = User.getUserBySocketId(socket.id)
   if (User.isUser(user)) {
     if ('' !== user.roomId) {
-      user.socket.emit('requestFail', JSON.stringify({ message: 'Cannot create room when in room.'}))
+      socket.emit('requestFail', JSON.stringify({ message: 'Cannot create room when in room.'}))
       return false
     }
     var room = new Room(data.roomName, data.roomDesc, data.maxUser)
@@ -182,11 +182,11 @@ function refuseInvite (socket, data) {
   }
 }
 
-function relayData (message, data) {
+function relayData (message, socket, data) {
   try {
     let user = User.getUser(data.to)
     if (User.isUser(user)) {
-      user.socket.emit(message, JSON.stringify(data))
+      socket.broadcast.to(user.socketId).emit(message, JSON.stringify(data))
     }
   } catch(e) {
 		console.log(e)
