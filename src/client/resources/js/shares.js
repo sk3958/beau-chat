@@ -35,7 +35,7 @@ Vue.component('shares', {
 				<div class="drag-target">
 				  <button v-on:click="closeShareDiv(1)">X</button>
 				</div>
-				<video id="share_video" controls playsinline autoplay muted>
+				<video id="share_video" controls playsinline autoplay>
 					This browser does not support video tag.
 				</video>
 			</div>
@@ -258,7 +258,11 @@ Vue.component('shares', {
 
 		setEvents () {
       const onMouseDown = (e) => {
-				this.dragTarget = e.target
+				if (undefined !== this.dragTarget &&
+					this.dragTarget instanceof HTMLDivElement &&
+					0 === this.dragTarget.id.indexOf('share_')) return
+
+				this.dragTarget = e.target.parentElement
 				this.xEventPos = e.clientX
 				this.yEventPos = e.clientY
 			}
@@ -330,8 +334,8 @@ Vue.component('shares', {
 
 			let el = this.shareVideoDiv.querySelector('.drag-target')
 			el.addEventListener('mousedown', onMouseDown)
-			el.addEventListener('mousemove', onMouseMove)
-			el.addEventListener('mouseup', onMouseUp)
+			document.body.addEventListener('mousemove', onMouseMove)
+			document.body.addEventListener('mouseup', onMouseUp)
 			el.addEventListener('touchstart', onTouchStart)
 			el.addEventListener('touchmove', onTouchMove)
 			el.addEventListener('touchend', onTouchEnd)
@@ -339,8 +343,8 @@ Vue.component('shares', {
 
 			el = this.shareAudioDiv.querySelector('.drag-target')
 			el.addEventListener('mousedown', onMouseDown)
-			el.addEventListener('mousemove', onMouseMove)
-			el.addEventListener('mouseup', onMouseUp)
+			document.body.addEventListener('mousemove', onMouseMove)
+			document.body.addEventListener('mouseup', onMouseUp)
 			el.addEventListener('touchstart', onTouchStart)
 			el.addEventListener('touchmove', onTouchMove)
 			el.addEventListener('touchend', onTouchEnd)

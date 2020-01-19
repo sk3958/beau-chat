@@ -40,7 +40,7 @@ const pcConfig = {
 var PeerVideo = Vue.component('PeerVideo', {
   template: `
     <div class="peer-video-container">
-			<video v-show="this.peerHasVideo" v-bind:id="peer_id" controls playsinline autoplay muted></video>
+			<video v-show="this.peerHasVideo" v-bind:id="peer_id" controls playsinline autoplay></video>
 			<canvas v-show="!this.peerHasVideo" class="no_peer_camera"></canvas>
     </div>
   `,
@@ -330,22 +330,48 @@ var PeerVideo = Vue.component('PeerVideo', {
 			this.dataChannel.send(JSON.stringify(message))
 		},
 
+    sendFileInfoToPeer (name, size) {
+			let message = {}
+			message.type = 'file'
+      message.message = 'fileSend'
+			message.filename = name
+			message.filesize = size
+			this.dataChannel.send(JSON.stringify(message))
+    },
+    
+    sendFileTransferError (name) {
+			let message = {}
+			message.type = 'file'
+      message.message = 'fileSendError'
+			message.filename = name
+			this.dataChannel.send(JSON.stringify(message))
+    },
+    
 		sendFileToPeer (file) {
 			this.makeSendProgress(file)
 			let fileReader = new FileReader()
 			const chunkSize = 16384;
 			let offset = 0
-			let message = {}
-			message.type = 'file'
-			message.filename = file.name
-			message.filesize = file.size
-			this.dataChannel.send(JSON.stringify(message))
+      this.sendFileInfoToPeer(file.name, file.size)
 
 			fileReader.addEventListener('error', () => this.showMessage('fileSend', 'Error', 'Error reading file'))
 			fileReader.addEventListener('abort', () => this.showMessage('fileSend', 'Error', 'File reading aborted:'))
 			fileReader.addEventListener('load', (event) => {
-				this.dataChannel.send(event.target.result)
-				offset += event.target.result.byteLength
+        try {
+          if (this.dataChannel.bufferedAmount < this.pc.sctp.maxMessageSize) {
+					  this.dataChannel.send(event.target.result)
+					  offset += event.target.result.byteLength
+          }
+        } catch(e) {
+          console.log(e)
+					this.clearSendProgress()
+					let info = {}
+					info.from = this.my_id
+					info.message = `Failed to send ${file.name} to ${this.peer_id}`
+					this.changeProp('recvMessage', info)
+          this.sendFileTransferError (file.name)
+        }
+
 				this.sendProgress.value = offset
 				if (offset < file.size) {
 					readSlice()
@@ -367,17 +393,25 @@ var PeerVideo = Vue.component('PeerVideo', {
 		},
 
 		prepareRecvFile (message) {
-			this.filename = message.filename
-			this.filesize = message.filesize
-			this.recvSize = 0
-			this.recvBuffer = []
+      if ('fileSend' === message.message) {
+				this.filename = message.filename
+				this.filesize = message.filesize
+				this.recvSize = 0
+				this.recvBuffer = []
 
-			let info = {}
-			info.from = this.my_id
-			info.message = `Receiving ${this.filename}(${this.filesize}) from ${this.peer_id}`
-			this.changeProp('recvMessage', info)
-			this.makeRecvProgress(this.filename, this.filesize)
-			this.clearDownloadAnchor()
+				let info = {}
+				info.from = this.my_id
+				info.message = `Receiving ${this.filename}(${this.filesize}) from ${this.peer_id}`
+				this.changeProp('recvMessage', info)
+				this.makeRecvProgress(this.filename, this.filesize)
+				this.clearDownloadAnchor()
+      } else if ('fileSendError' === message.message) {
+				let info = {}
+				info.from = this.my_id
+				info.message = `Fail to receive ${this.filename} from ${this.peer_id}`
+				this.clearRecvProgress()
+				this.changeProp('recvMessage', info)
+      }
 		},
 
 		recvFile (data) {
