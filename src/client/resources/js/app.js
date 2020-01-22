@@ -49,6 +49,9 @@ let vue = new Vue({
 
     window.addEventListener('beforeunload', (e) => {
 			e.preventDefault()
+
+			if (this.is_room) this.socket.emit('needReenterRoom', JSON.stringify({ userId: this.my_id, room: this.my_room }))
+
 			e.returnValue = ''
 
 			/* if (this.is_room) this.sendLeaveRoom()
@@ -64,6 +67,7 @@ let vue = new Vue({
 			this.socket.emit('addUser', JSON.stringify({ userId: this.my_id, userName: this.my_name, userType: this.my_type }))
 			this.socket.emit('roomList')
 			this.socket.emit('userList')
+			this.socket.emit('checkWasInRoom', JSON.stringify({ userId: this.my_id }))
 		})
 
 		this.socket.on('connect_error', (error) => {

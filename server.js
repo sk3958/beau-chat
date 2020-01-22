@@ -8,6 +8,8 @@ const session = require('express-session')
 const redis = require('redis')
 const redisStore = require('connect-redis')(session)
 const checkUser = require('./src/checkUser')
+const User = require('./src/user')
+const Room = require('./src/room')
 
 const redisClient = redis.createClient()
 redisClient.on('error', (err) => {
@@ -30,7 +32,7 @@ app.use(session({
   store: new redisStore({ host: 'localhost', port: process.env.REDIS_PORT || 6379, client: redisClient }),
   secret: process.env['SESSION_SECRET'],
   resave: false,
-  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 },
+  cookie: { maxAge: 24 * 60 * 60 * 1000 },
   saveUninitialized: true
 }))
 
@@ -38,6 +40,9 @@ let server = https.createServer(options, app)
 let io = require('socket.io')(server)
 let wildcard = require('socketio-wildcard')()
 io.use(wildcard)
+
+Room.loadFromRedis()
+User.loadFromRedis()
 
 app.get('/', (req, res) => {
   checkUser(req, res, true)

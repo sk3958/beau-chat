@@ -1,22 +1,27 @@
-const redis = require('redis')
+const redisUtil = require('./redisUtil')
 const User = require('./user')
 
 class Room {
   static roomList = {}
+	static snapshot = {}
   static roomCount = 0
+	static roomIndex = 0
 	static HKEY = 'classroom:rooms'
-  static redisClient = redis.createClient(process.env.REDIS_PORT || 6379)
 
-  constructor (roomName, roomDesc, maxUser, roomId = undefined) {
-		if (undefined === roomId) this.roomId = 'room_' + ++Room.roomCount
+  constructor (roomName, roomDesc, maxUser, roomId = undefined, addToList = true) {
+		if (undefined === roomId) this.roomId = 'room_' + ++Room.roomIndex
 		else this.roomId = roomId
     this.roomName = roomName
     this.roomDesc = roomDesc
     this.users = {}
 		this.maxUser = maxUser
 
-    Room.roomList[this.roomId] = this
-		this.saveToRedis(true)
+		if (addToList) {
+			Room.roomList[this.roomId] = this
+			this.saveToRedis(true)
+		}
+
+		Room.roomCount++
   }
 
 	get userCount () {
@@ -30,7 +35,7 @@ class Room {
   }
 
   deleteUser (user) {
-    if (this.users.hasOwnProperty(user.userId)) {
+    if (this.users[user.userId]) {
 			this.users[user.userId].roomId = ''
       delete this.users[user.userId]
     }
@@ -60,9 +65,9 @@ class Room {
 
 	async saveToRedis (needSaveRoomCount) {
 		try {
-			await Room.redisClient.hset(Room.HKEY, this.roomId, JSON.stringify(this.info))
+			await redisUtil.hset(Room.HKEY, this.roomId, JSON.stringify(this.info))
 			if (needSaveRoomCount)
-				await Room.redisClient.hset(Room.HKEY, 'roomCount', Room.roomCount)
+				await redisUtil.hset(Room.HKEY, 'roomIndex', Room.roomIndex)
 		} catch(err) {
 			console.log(err)
 		}
@@ -70,7 +75,7 @@ class Room {
 
 	async deleteFromRedis () {
 		try {
-			await Room.redisClient.hdel(Room.HKEY, this.roomId)
+			await redisUtil.hdel(Room.HKEY, this.roomId)
 		} catch(err) {
 			console.log(err)
 		}
@@ -82,7 +87,7 @@ class Room {
 
   static getRoomByUserId (userId) {
     for (var roomId in Room.roomList) {
-      if (Room.roomList[roomId].users.hasOwnProperty(userId)) return Room.roomList[roomId]
+      if (Room.roomList[roomId].users[userId]) return Room.roomList[roomId]
     }
     return null
   }
@@ -98,45 +103,43 @@ class Room {
   }
 
   static isRoom (room) {
-    if (undefined === room || null === room) return false
-    return (room.hasOwnProperty('roomId') &&
-      room.hasOwnProperty('roomName') &&
-      room.hasOwnProperty('roomDesc') &&
-      room.hasOwnProperty('users') &&
-      room.hasOwnProperty('maxUser'))
+		return room instanceof Room
   }
 
-	static loadFromRedis () {
+	static async loadFromRedis () {
 		try {
-			Room.redisClient.hkey(Room.HKEY, (err, rtns) => {
-				rtns.forEach((rtn) => {
-					Room.createRoom(rtn)
-				})
+			let obj = await redisUtil.hgetall(Room.HKEY)
+			if (null === obj) return
+
+			Object.keys(obj).forEach((key) => {
+				Room.createRoom(key, obj[key])
 			})
 		} catch(err) {
 			console.log(err)
 		}
 	}
 
-	static async createRoom (field) {
+	static createRoom (roomId, strRoom) {
 		try {
-			let value = await Room.redisClient.hget(Room.HKEY, field)
-			if ('roomCount' === field) {
-				Room.roomCount = Number(value)
+			if ('roomIndex' === roomId) {
+				Room.roomIndex = Number(strRoom)
 				return true
 			}
 
-			let obj = JSON.parse(value)
-			let room = new Room(obj.roomName, obj.roomDesc, obj.maxUser, obj.roomId)
+			let obj = JSON.parse(strRoom)
+			let room = new Room(obj.roomName, obj.roomDesc, obj.maxUser, obj.roomId, false)
 			
 			let user
 			let o
-			Object.keys(obj.users).forEach((key) => {
-				o = obj.users[key]
-				user = new User(o.userId, o.userName, o.userType, '')
-				room.addUser(user)
-			})
+			if (obj.users) {
+				Object.keys(obj.users).forEach((key) => {
+					o = obj.users[key]
+					user = new User(o.userId, o.userName, o.userType, '', false)
+					room.addUser(user)
+				})
+			}
 
+			Room.snapshot[room.roomId] = room
 			return room
 		} catch(err) {
 			console.log(err)

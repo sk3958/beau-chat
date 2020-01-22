@@ -11,11 +11,15 @@ Vue.component('shares', {
 			<div id="share_text_div">
 				<div id="share_text">
 					<div class="message" v-for="(message, index) in messages" :key="index">
-						<div v-if="message.from === my_id">
+						<div v-if="message.type === 'info'">
+							<div class="my-name"><div class="name">infomation</div></div>
+							<div class="my-message"><div class="my-talk">{{ message.message }}</div></div>
+						</div>
+						<div v-else-if="message.from === my_id">
 							<div class="my-name"><div class="name">me</div></div>
 							<div class="my-message"><div class="my-talk">{{ message.message }}</div></div>
 						</div>
-						<div v-if="message.from !== my_id">
+						<div v-else>
 							<div class="peer-name"><div class="name">{{ message.from }}</div></div>
 							<div class="peer-message"><div class="peer-talk">{{ message.message }}</div></div>
 						</div>
@@ -234,7 +238,7 @@ Vue.component('shares', {
 
 			let file = this.sendFileSelector.files[0]
 			let message = {}
-			message.type = 'message'
+			message.type = 'info'
 			message.from = this.my_id
 			message.message = `sending file ${file.name}(size: ${file.size})`
 			this.messages.push(message)
@@ -332,23 +336,29 @@ Vue.component('shares', {
 				this.yEventPos = 0
 			}
 
+			let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+
 			let el = this.shareVideoDiv.querySelector('.drag-target')
 			el.addEventListener('mousedown', onMouseDown)
 			document.body.addEventListener('mousemove', onMouseMove)
 			document.body.addEventListener('mouseup', onMouseUp)
-			el.addEventListener('touchstart', onTouchStart)
-			el.addEventListener('touchmove', onTouchMove)
-			el.addEventListener('touchend', onTouchEnd)
-			el.addEventListener('touchcancel', onTouchCancel)
+			if (isMobile) {
+				el.addEventListener('touchstart', onTouchStart)
+				el.addEventListener('touchmove', onTouchMove)
+				el.addEventListener('touchend', onTouchEnd)
+				el.addEventListener('touchcancel', onTouchCancel)
+			}
 
 			el = this.shareAudioDiv.querySelector('.drag-target')
 			el.addEventListener('mousedown', onMouseDown)
 			document.body.addEventListener('mousemove', onMouseMove)
 			document.body.addEventListener('mouseup', onMouseUp)
-			el.addEventListener('touchstart', onTouchStart)
-			el.addEventListener('touchmove', onTouchMove)
-			el.addEventListener('touchend', onTouchEnd)
-			el.addEventListener('touchcancel', onTouchCancel)
+			if (isMobile) {
+				el.addEventListener('touchstart', onTouchStart)
+				el.addEventListener('touchmove', onTouchMove)
+				el.addEventListener('touchend', onTouchEnd)
+				el.addEventListener('touchcancel', onTouchCancel)
+			}
 		},
 
 		closeShareDiv (target) {

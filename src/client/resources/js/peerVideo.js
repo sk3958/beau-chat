@@ -96,6 +96,12 @@ var PeerVideo = Vue.component('PeerVideo', {
 		}
 	},
 
+	beforeDestroy () {
+		this.clearSendProgress()
+		this.clearRecvProgress()
+		this.clearDownloadAnchor()
+	},
+
   methods: {
 		initialize (log, changeProp, showMessage) {
 			this.log = log
@@ -313,13 +319,13 @@ var PeerVideo = Vue.component('PeerVideo', {
 		},
 
 		onPeerMessage (event) {
-			try {
+			if (event.data instanceof ArrayBuffer) {
+				this.recvFile(event.data)
+			} else {
 				let message = JSON.parse(event.data)
 				if ('message' === message.type) this.changeProp('recvMessage', message)
 				else if ('file' === message.type) this.prepareRecvFile(message)
 				else if ('info' === message.type) this.onPeerInfo(message)
-			} catch (e) {
-				this.recvFile(event.data)
 			}
 		},
 
@@ -366,6 +372,7 @@ var PeerVideo = Vue.component('PeerVideo', {
           console.log(e)
 					this.clearSendProgress()
 					let info = {}
+					info.type = 'info'
 					info.from = this.my_id
 					info.message = `Failed to send ${file.name} to ${this.peer_id}`
 					this.changeProp('recvMessage', info)
@@ -378,6 +385,7 @@ var PeerVideo = Vue.component('PeerVideo', {
 				} else {
 					this.clearSendProgress()
 					let info = {}
+					info.type = 'info'
 					info.from = this.my_id
 					info.message = `Sent ${file.name} to ${this.peer_id}`
 					this.changeProp('recvMessage', info)
@@ -400,6 +408,7 @@ var PeerVideo = Vue.component('PeerVideo', {
 				this.recvBuffer = []
 
 				let info = {}
+				info.type = 'info'
 				info.from = this.my_id
 				info.message = `Receiving ${this.filename}(${this.filesize}) from ${this.peer_id}`
 				this.changeProp('recvMessage', info)
@@ -407,6 +416,7 @@ var PeerVideo = Vue.component('PeerVideo', {
 				this.clearDownloadAnchor()
       } else if ('fileSendError' === message.message) {
 				let info = {}
+				info.type = 'info'
 				info.from = this.my_id
 				info.message = `Fail to receive ${this.filename} from ${this.peer_id}`
 				this.clearRecvProgress()
@@ -430,6 +440,7 @@ var PeerVideo = Vue.component('PeerVideo', {
 				this.recvBuffer = []
 
 				let info = {}
+				info.type = 'info'
 				info.from = this.my_id
 				info.message = `Received ${this.filename} from ${this.peer_id}`
 				this.changeProp('recvMessage', info)
@@ -471,12 +482,14 @@ var PeerVideo = Vue.component('PeerVideo', {
 		},
 
 		clearSendProgress () {
+			if (undefined === this.sendProgressDiv) return
 			this.sendProgressDiv.remove()
 			this.sendProgressDiv = undefined
 			this.sendProgress = undefined
 		},
 
 		clearRecvProgress () {
+			if (undefined === this.recvProgressDiv) return
 			this.recvProgressDiv.remove()
 			this.recvProgressDiv = undefined
 			this.recvProgress = undefined

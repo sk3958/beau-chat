@@ -1,4 +1,4 @@
-const redis = require('redis')
+const redisUtil = require('./redisUtil')
 const Cryptr = require('cryptr')
 const User = require('./user')
 const cryptr = new Cryptr(process.env.SESSION_SECRET)
@@ -16,7 +16,6 @@ async function setUser (req, res, isRootUrl) {
     return true
   }
 
-  const redisClient = redis.createClient(process.env.REDIS_PORT || 6379)
   try {
     const { param1, param2 } = req.params
     if (undefined === param1 || undefined === param2) {
@@ -24,10 +23,15 @@ async function setUser (req, res, isRootUrl) {
       return false
     }
 
-    user_id = cryptr.decrypt(param1)
-    tempKey = cryptr.decrypt(param2)
+    const user_id = cryptr.decrypt(param1)
+    const tempKey = cryptr.decrypt(param2)
 
-    const info = await redisClient.get(user_id)
+    const info = await redisUtil.get(user_id)
+    if (!info) {
+      res.sendStatus(404)
+      return false
+    }
+
     const userInfo = JSON.parse(info)
     if (userInfo.tempKey === tempKey) {
       session.logined = true
@@ -35,7 +39,7 @@ async function setUser (req, res, isRootUrl) {
       session.user_name = userInfo.user_name
       session.user_kind = userInfo.user_kind
 
-      await redisClient.del(user_id)
+      await redisUtil.del(user_id)
 
 			addUser(session)
 			res.redirect('/classroom')
@@ -45,8 +49,6 @@ async function setUser (req, res, isRootUrl) {
     console.log(e)
     res.sendStatus(500)
     return false
-  } finally {
-    if (redisClient.connected) redisClient.quit()
   }
 
   res.sendStatus(404)
@@ -56,8 +58,8 @@ async function setUser (req, res, isRootUrl) {
 function addUser (session) {
 	if (!User.isUser(User.getUser(session.user_id)))
 	{
-		user = new User(session.user_id, session.user_name, session.user_kind)
-		User.userList[session.user_id] = user
+		const user = new User(session.user_id, session.user_name, session.user_kind)
+		user.sessionId = 'sess:' + session.id
 		return user
 	}
 	return null

@@ -18,5 +18,9 @@
     "socket.io": "^2.3.0",
     "socketio-wildcard": "^2.0.0",
     "uuid": "^3.3.3"
+  },
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-plugin-vue": "^6.1.2"
   }
 }

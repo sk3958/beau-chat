@@ -1,12 +1,17 @@
 const User = require('./user')
 const Room = require('./room')
 
-const processRequest = function (io, socket, url, data) {
-	/*if (!isValidConnection(socket, url, data)) {
-		socket.disconnect()
-		console.warn('Invalid connection detected: ',url, socket.handshake)
-		return false
-	}*/
+const processRequest = async function (io, socket, url, data) {
+	try {
+		let isVaildUser = await isValidConnection(socket, url, data)
+		if (!isVaildUser) {
+			//socket.disconnect()
+console.warn('Invalid connection detected: ', url, data)
+			return false
+		}
+	} catch(e) {
+		console.log(e)
+	}
 
   switch (url) {
     case 'disconnect':
@@ -17,6 +22,9 @@ const processRequest = function (io, socket, url, data) {
       break
     case 'addUser':
       addUser(io, socket, data)
+      break
+    case 'checkWasInRoom':
+      checkWasInRoom(io, socket, data)
       break
     case 'deleteUser':
       deleteUser(io, socket)
@@ -40,7 +48,7 @@ const processRequest = function (io, socket, url, data) {
       relayData('doneReadyForNewMember', socket, data)
       break
     case 'leaveRoom':
-      leaveRoom(io, socket, data)
+      leaveRoom(io, socket, data, true)
       break
     case 'inviteRoom':
       inviteRoom(socket, data)
@@ -57,6 +65,9 @@ const processRequest = function (io, socket, url, data) {
     case 'roomIsReady':
       relayData('roomIsReady', socket, data)
       break
+    case 'needReenterRoom':
+      registerReenterRoom(data)
+      break
     case 'pcSignaling':
       relayData('pcSignaling', socket, data)
       break
@@ -70,7 +81,13 @@ const processRequest = function (io, socket, url, data) {
 }
 
 function addUser (io, socket, data) {
-  var user = new User(data.userId, data.userName, data.userType, socket.id)
+	let user = User.getUser(data.userId)
+	if (User.isUser(user)) {
+		user.socketId = socket.id
+	} else {
+  	user = new User(data.userId, data.userName, data.userType, socket.id)
+	}
+
   io.sockets.emit('addUser', JSON.stringify(user.info))
 }
 
@@ -80,7 +97,7 @@ function deleteUser (io, socket) {
   if (User.isUser(user)) {
     var room = Room.getRoomByUser(user)
     if (null !== room) {
-			leaveRoom(io, socket, user)
+			leaveRoom(io, socket, user, false)
     }
 
     user.destroy()
@@ -100,14 +117,14 @@ function sendUserList (socket) {
   socket.emit('userList', JSON.stringify(data))
 }
 
-function createRoom (io, socket, data) {
+function createRoom (io, socket, data, roomId = undefined) {
   var user = User.getUserBySocketId(socket.id)
   if (User.isUser(user)) {
     if ('' !== user.roomId) {
       socket.emit('requestFail', JSON.stringify({ message: 'Cannot create room when in room.'}))
       return false
     }
-    var room = new Room(data.roomName, data.roomDesc, data.maxUser)
+    var room = new Room(data.roomName, data.roomDesc, data.maxUser, roomId)
     io.sockets.emit('createRoom', JSON.stringify(room.info))
     enterRoom(io, socket, { roomId: room.roomId, userId: user.userId })
   }
@@ -129,7 +146,7 @@ function enterRoom (io, socket, data) {
   }
 }
 
-function leaveRoom (io, socket, data) {
+function leaveRoom (io, socket, data, fromUser) {
   var user = User.getUser(data.userId)
   if (User.isUser(user)) {
     var room = Room.getRoom(user.roomId)
@@ -140,7 +157,9 @@ function leaveRoom (io, socket, data) {
       })
       if (0 === room.userCount) io.sockets.emit('deleteRoom', JSON.stringify(room.info))
     }
-  }
+
+		if (fromUser) User.deleteReenterRoom(data.userId)
+	}
 }
 
 function inviteRoom (socket, data) {
@@ -151,35 +170,17 @@ function inviteRoom (socket, data) {
   }
 }
 
-/*function acceptInvite (io, socket, data) {
-  var inviteUser = User.getUser(data.inviteId)
-  var invitedUser = User.getUser(data.invitedId)
-
-	if (!inviteUser) {
-    socket.emit('requestFail', JSON.stringify({ message: `${data.inviteId} has logged out.` }))
-		return false
-	}
-
-	if (User.isUser(inviteUser) && '' !== inviteUser.roomId) {
-    socket.emit('requestFail', JSON.stringify({ message: `${inviteUser.userName}(${inviteUser.userId}) is in another room already.` }))
-		return false
-	}
-
-	createRoom(io, inviteUser.socket, {
-		roomName: 'Private',
-		roomDesc: 'Private',
-		maxUser: 2
-	})
-
-	enterRoom(io, socket, { roomId: inviteUser.roomId, userId: data.invitedId })
-}*/
-
 function refuseInvite (socket, data) {
   var inviteUser = User.getUser(data.inviteId)
   var user = User.getUserBySocketId(socket.id)
   if (inviteUser.userId && user.userId) {
     socket.broadcast.to(inviteUser.socketId).emit('refusedInvite', JSON.stringify(user.info))
   }
+}
+
+function registerReenterRoom (data) {
+	let user = User.getUser(data.userId)
+	if (User.isUser(user)) user.registerReenterRoom(data.room)
 }
 
 function relayData (message, socket, data) {
@@ -198,22 +199,82 @@ function relayRoomData (socket, message, data) {
 }
 
 function isValidConnection (socket, url, data) {
-	if ('deleteUser' === url) return true
-	if ('disconnect' === url) return true
+	return new Promise((resolve, reject) => {
+		if ('deleteUser' === url) return resolve(true)
+		if ('disconnect' === url) return resolve(true)
 
-	let user
-	if ('addUser' === url) {
+		let user = User.getUserBySocketId(socket.id)
+		if (User.isUser(user)) return resolve(true)
+
+		if (!data) return resolve(false)
+
 		user = User.getUser(data.userId)
-	} else {
-		user = User.getUserBySocketId(socket.id)
-	}
+		if (User.isUser(user)) return resolve(true)
 
-	if (!User.isUser(user)) return false
+		User.getInfoForReconnect(data.userId)
+			.then((res) => {
+				if (res) return resolve(true)
 
-	return true
+				user = User.getSnapshot(data.userId)
+console.log('getSnapshot: ', user)
+				if (!(User.isUser(user) && user.sessionId)) return resolve(false)
+
+				User.getUserSession(user.sessionId)
+					.then((rtn) => {
+console.log('getUserSession: ', user.sessionId, rtn)
+						if (rtn) resolve(true)
+						else resolve(false)
+					})
+					.catch((err) => {
+						reject(err)
+					})
+			})
+			.catch((err) => {
+				console.log(err)
+				reject(err)
+			})
+	})
 }
 
-function debugClient (data, depth = 0) {
+async function checkWasInRoom (io, socket, data) {
+	try {
+		let  objUser = await getWasInRoom(data) 
+		if (!objUser) return
+
+		let objRoom = objUser.room
+		if (objRoom) {
+			let room = Room.getRoom(objRoom.roomId)
+			if (Room.isRoom(room)) {
+				enterRoom(io, socket, { roomId: room.roomId, userId: objUser.userId })
+			} else {
+				createRoom(io, socket, {
+					roomName: objRoom.roomName,
+					roomDesc: objRoom.roomDesc,
+					maxUser: objRoom.maxUser
+				}, objRoom.roomId)
+			}
+
+			User.deleteReenterRoom(data.userId)
+		}
+	} catch(err) {
+		console.log(err)
+	}
+}
+
+function getWasInRoom (data) {
+	return new Promise((resolve, reject) => {
+		User.getInfoForReenterRoom(data.userId)
+			.then((res) => {
+				resolve(res)
+			})
+			.catch((err) => {
+				console.log(err)
+				reject(err)
+			})
+	})
+}
+
+function debugClient (data/*, depth = 0*/) {
   console.log('debugClient : ', data)
   /* let space = ''
   for (let i = 0; i < depth; i++) space += '  '

@@ -159,8 +159,8 @@ td {
 	width: 100%;
 	padding-bottom: 10px;
 	display: grid;
-	grid-template-rows:  auto auto;
-	grid-template-columns: auto auto;
+	grid-template-rows: 2 auto;
+	grid-template-columns: 2 auto;
 	grid-template-areas: "peers peers" "mycam utils";
 }
 #peers {
@@ -168,14 +168,15 @@ td {
 	min-height: 500px; 
 	margin: 20px;
 	/*background-color: #ffb3b9;*/
-	display: grid;
-	grid-template-rows: 2 1fr;
-	grid-template-columns: 2 1fr;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-around;
+	align-items: center;
 	grid-area: peers;
 }
 
 .peer_video-container {
-	margin: 5px 5px;
+	margin: 5px 10px;
 }
 
 .video-container {

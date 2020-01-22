@@ -55,7 +55,7 @@ Vue.component('my-video', {
 						callback()
 					})
 					.catch((err) => {
-						this.log(err)
+						this.log(err.message)
 						this.hasVideo = false
 						this.drawNoCamera()
 						this.$emit('video_info', this.hasVideo, this.camStream, true)
