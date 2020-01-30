@@ -1,4 +1,4 @@
-const redisUtil = require('./redisUtil')
+const RedisUtil = require('./redisUtil')
 const User = require('./user')
 
 class Room {
@@ -6,7 +6,6 @@ class Room {
 	static snapshot = {}
   static roomCount = 0
 	static roomIndex = 0
-	static HKEY = 'classroom:rooms'
 
   constructor (roomName, roomDesc, maxUser, roomId = undefined, addToList = true) {
 		if (undefined === roomId) this.roomId = 'room_' + ++Room.roomIndex
@@ -18,7 +17,6 @@ class Room {
 
 		if (addToList) {
 			Room.roomList[this.roomId] = this
-			this.saveToRedis(true)
 		}
 
 		Room.roomCount++
@@ -31,7 +29,6 @@ class Room {
   addUser (user) {
     this.users[user.userId] = user
 		user.roomId = this.roomId
-		this.saveToRedis(false)
   }
 
   deleteUser (user) {
@@ -40,7 +37,6 @@ class Room {
       delete this.users[user.userId]
     }
     if (0 === this.userCount) this.destroy()
-		else this.saveToRedis(false)
   }
 
   get info () {
@@ -60,26 +56,7 @@ class Room {
   destroy () {
     delete Room.roomList[this.roomId]
     Room.roomCount--
-		this.deleteFromRedis(true)
   }
-
-	async saveToRedis (needSaveRoomCount) {
-		try {
-			await redisUtil.hset(Room.HKEY, this.roomId, JSON.stringify(this.info))
-			if (needSaveRoomCount)
-				await redisUtil.hset(Room.HKEY, 'roomIndex', Room.roomIndex)
-		} catch(err) {
-			console.log(err)
-		}
-	}
-
-	async deleteFromRedis () {
-		try {
-			await redisUtil.hdel(Room.HKEY, this.roomId)
-		} catch(err) {
-			console.log(err)
-		}
-	}
 
   static getRoom (roomId) {
     return Room.roomList[roomId]
@@ -105,46 +82,6 @@ class Room {
   static isRoom (room) {
 		return room instanceof Room
   }
-
-	static async loadFromRedis () {
-		try {
-			let obj = await redisUtil.hgetall(Room.HKEY)
-			if (null === obj) return
-
-			Object.keys(obj).forEach((key) => {
-				Room.createRoom(key, obj[key])
-			})
-		} catch(err) {
-			console.log(err)
-		}
-	}
-
-	static createRoom (roomId, strRoom) {
-		try {
-			if ('roomIndex' === roomId) {
-				Room.roomIndex = Number(strRoom)
-				return true
-			}
-
-			let obj = JSON.parse(strRoom)
-			let room = new Room(obj.roomName, obj.roomDesc, obj.maxUser, obj.roomId, false)
-			
-			let user
-			let o
-			if (obj.users) {
-				Object.keys(obj.users).forEach((key) => {
-					o = obj.users[key]
-					user = new User(o.userId, o.userName, o.userType, '', false)
-					room.addUser(user)
-				})
-			}
-
-			Room.snapshot[room.roomId] = room
-			return room
-		} catch(err) {
-			console.log(err)
-		}
-	}
 }
 
 module.exports = Room

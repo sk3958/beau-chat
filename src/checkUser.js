@@ -1,4 +1,4 @@
-const redisUtil = require('./redisUtil')
+const RedisUtil = require('./redisUtil')
 const Cryptr = require('cryptr')
 const User = require('./user')
 const cryptr = new Cryptr(process.env.SESSION_SECRET)
@@ -6,7 +6,14 @@ const cryptr = new Cryptr(process.env.SESSION_SECRET)
 async function setUser (req, res, isRootUrl) {
   let session = req.session
   if (session.logined && session.user_id.length > 0 && session.user_kind.length === 2) {
-		addUser(session)
+		try {
+			await addUser(session)
+		} catch(e) {
+			console.log(e)
+      res.sendStatus(500)
+      return false
+		}
+
 		if (isRootUrl) {
 			res.redirect('/classroom')
 		} else {
@@ -26,7 +33,8 @@ async function setUser (req, res, isRootUrl) {
     const user_id = cryptr.decrypt(param1)
     const tempKey = cryptr.decrypt(param2)
 
-    const info = await redisUtil.get(user_id)
+		const key = RedisUtil.Keys.login.prefix + user_id
+    const info = await RedisUtil.get(key)
     if (!info) {
       res.sendStatus(404)
       return false
@@ -39,9 +47,9 @@ async function setUser (req, res, isRootUrl) {
       session.user_name = userInfo.user_name
       session.user_kind = userInfo.user_kind
 
-      await redisUtil.del(user_id)
+      await RedisUtil.del(key)
 
-			addUser(session)
+			await addUser(session)
 			res.redirect('/classroom')
       return true
     }
@@ -59,10 +67,28 @@ function addUser (session) {
 	if (!User.isUser(User.getUser(session.user_id)))
 	{
 		const user = new User(session.user_id, session.user_name, session.user_kind)
-		user.sessionId = 'sess:' + session.id
-		return user
+
+		let key = RedisUtil.Keys.user.prefix + session.user_id
+		let ttl = RedisUtil.Keys.user.ttl
+		let sessionId = 'sess:' + session.id
+		return new Promise((resolve, reject) => {
+			RedisUtil.hset(key, 'sessionId', sessionId)
+				.then(() => {
+					RedisUtil.expire(key, ttl)
+						.then(() => {
+							resolve(user)
+						})
+						.catch((err2) => {
+							reject(err2)
+						})
+				})
+				.catch((err) => {
+					reject(err)
+				})
+		})
+	} else {
+		return Promise.resolve(1)
 	}
-	return null
 }
 
 module.exports = setUser

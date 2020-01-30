@@ -2,10 +2,11 @@ const User = require('./user')
 const Room = require('./room')
 
 const processRequest = async function (io, socket, url, data) {
+// console.log('ip addr: ', url, socket.handshake.address)
 	try {
-		let isVaildUser = await isValidConnection(socket, url, data)
-		if (!isVaildUser) {
-			//socket.disconnect()
+		let isValidUser = await isValidConnection(socket, url, data)
+		if (!isValidUser) {
+			socket.disconnect()
 console.warn('Invalid connection detected: ', url, data)
 			return false
 		}
@@ -44,32 +45,27 @@ console.warn('Invalid connection detected: ', url, data)
     case 'newMemberIsReady':
       relayRoomData(socket, 'newMemberIsReady', data)
       break
-    case 'doneReadyForNewMember':
-      relayData('doneReadyForNewMember', socket, data)
-      break
     case 'leaveRoom':
       leaveRoom(io, socket, data, true)
       break
     case 'inviteRoom':
       inviteRoom(socket, data)
       break
-    case 'acceptInvite':
-      relayData('acceptInvite', socket, data)
-      break
     case 'refuseInvite':
       refuseInvite(socket, data)
       break
+    case 'acceptInvite':
+    case 'doneReadyForNewMember':
     case 'canceledInvite':
-      relayData('canceledInvite', socket, data)
-      break
     case 'roomIsReady':
-      relayData('roomIsReady', socket, data)
+    case 'pcSignaling':
+      relayData(url, socket, data)
       break
     case 'needReenterRoom':
       registerReenterRoom(data)
       break
-    case 'pcSignaling':
-      relayData('pcSignaling', socket, data)
+    case 'heartbeat':
+      setUserAlive(data)
       break
     case 'log':
       debugClient(data)
@@ -85,7 +81,7 @@ function addUser (io, socket, data) {
 	if (User.isUser(user)) {
 		user.socketId = socket.id
 	} else {
-  	user = new User(data.userId, data.userName, data.userType, socket.id)
+		user = new User(data.userId, data.userName, data.userType, socket.id)
 	}
 
   io.sockets.emit('addUser', JSON.stringify(user.info))
@@ -202,6 +198,7 @@ function isValidConnection (socket, url, data) {
 	return new Promise((resolve, reject) => {
 		if ('deleteUser' === url) return resolve(true)
 		if ('disconnect' === url) return resolve(true)
+		if ('pcSignaling' === url) return resolve(true)
 
 		let user = User.getUserBySocketId(socket.id)
 		if (User.isUser(user)) return resolve(true)
@@ -211,27 +208,12 @@ function isValidConnection (socket, url, data) {
 		user = User.getUser(data.userId)
 		if (User.isUser(user)) return resolve(true)
 
-		User.getInfoForReconnect(data.userId)
-			.then((res) => {
-				if (res) return resolve(true)
-
-				user = User.getSnapshot(data.userId)
-console.log('getSnapshot: ', user)
-				if (!(User.isUser(user) && user.sessionId)) return resolve(false)
-
-				User.getUserSession(user.sessionId)
-					.then((rtn) => {
-console.log('getUserSession: ', user.sessionId, rtn)
-						if (rtn) resolve(true)
-						else resolve(false)
-					})
-					.catch((err) => {
-						reject(err)
-					})
+		User.existsSession(data.userId)
+			.then((rtn) => {
+				return resolve(rtn)
 			})
 			.catch((err) => {
-				console.log(err)
-				reject(err)
+				return reject(err)
 			})
 	})
 }
@@ -272,6 +254,14 @@ function getWasInRoom (data) {
 				reject(err)
 			})
 	})
+}
+
+async function setUserAlive (data) {
+	try {
+		await User.extendSessionTime(data.userId)
+	} catch(err) {
+		console.log(err)
+	}
 }
 
 function debugClient (data/*, depth = 0*/) {

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Classroom</title>
   <link rel="stylesheet" href="./css/style.css?after" type="text/css" />
+	<script src="https://kit.fontawesome.com/8dfc2b374d.js" crossorigin="anonymous"></script>
 </head>
 <body>
   <div id="app">
@@ -11,10 +12,10 @@
       <rooms-info v-show="!is_room"
         :rooms="rooms"
         :room_count="room_count"
-        :socket="socket"
         :my_id="my_id"
         :my_status="my_status"
         :room_maxs="room_maxs"
+        @socket="sendToServer"
         @log="log"
         :dummy="dummy"
         ref="roomsInfo">
@@ -25,10 +26,10 @@
         :my_id="my_id"
         :log="log"
         :users="users"
-        :socket="socket"
         :user_count="user_count"
         :on_waiting="on_waiting"
         :on_room="on_room"
+        @socket="sendToServer"
 				@show_message="showMessage"
         @log="log"
         ref="usersInfo">

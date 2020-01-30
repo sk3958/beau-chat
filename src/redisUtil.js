@@ -1,11 +1,26 @@
 const redis = require('redis')
 
-class redisUtil {
+class RedisUtil {
+	static Keys = {
+		user: {
+			prefix: 'classroom:user:',
+			ttl: 3600
+		},
+		login: {
+			prefix: 'classroom:login:',
+			ttl: 30
+		},
+		reenterRoom: {
+			prefix: 'classroom:needReenterRoom:',
+			ttl: 20
+		}
+	}
+
   static client = redis.createClient(process.env.REDIS_PORT || 6379)
 
 	static get (key) {
 		return new Promise((resolve, reject) => {
-			redisUtil.client.get(key, (err, rtn) => {
+			RedisUtil.client.get(key, (err, rtn) => {
 				if (err) return reject(err)
 				resolve(rtn)
 			})
@@ -14,7 +29,7 @@ class redisUtil {
 
 	static set (key, value) {
 		return new Promise((resolve, reject) => {
-			redisUtil.client.set(key, value, (err, rtn) => {
+			RedisUtil.client.set(key, value, (err, rtn) => {
 				if (err) return reject(err)
 				resolve(rtn)
 			})
@@ -23,7 +38,7 @@ class redisUtil {
 
 	static setex (key, timeout, value) {
 		return new Promise((resolve, reject) => {
-			redisUtil.client.setex(key, timeout, value, (err, rtn) => {
+			RedisUtil.client.setex(key, timeout, value, (err, rtn) => {
 				if (err) return reject(err)
 				resolve(rtn)
 			})
@@ -32,7 +47,7 @@ class redisUtil {
 
 	static del (key) {
 		return new Promise((resolve, reject) => {
-			redisUtil.client.del(key, (err, rtn) => {
+			RedisUtil.client.del(key, (err, rtn) => {
 				if (err) return reject(err)
 				resolve(rtn)
 			})
@@ -41,7 +56,7 @@ class redisUtil {
 
 	static hget (key, field) {
 		return new Promise((resolve, reject) => {
-			redisUtil.client.hget(key, field, (err, rtn) => {
+			RedisUtil.client.hget(key, field, (err, rtn) => {
 				if (err) return reject(err)
 				resolve(rtn)
 			})
@@ -50,7 +65,7 @@ class redisUtil {
 
 	static hgetall (key) {
 		return new Promise((resolve, reject) => {
-			redisUtil.client.hgetall(key, (err, rtn) => {
+			RedisUtil.client.hgetall(key, (err, rtn) => {
 				if (err) return reject(err)
 				resolve(rtn)
 			})
@@ -59,7 +74,7 @@ class redisUtil {
 
 	static hset (key, field, value) {
 		return new Promise((resolve, reject) => {
-			redisUtil.client.hset(key, field, value, (err, rtn) => {
+			RedisUtil.client.hset(key, field, value, (err, rtn) => {
 				if (err) return reject(err)
 				resolve(rtn)
 			})
@@ -68,7 +83,25 @@ class redisUtil {
 
 	static hdel (key, field) {
 		return new Promise((resolve, reject) => {
-			redisUtil.client.hdel(key, field, (err, rtn) => {
+			RedisUtil.client.hdel(key, field, (err, rtn) => {
+				if (err) return reject(err)
+				resolve(rtn)
+			})
+		})
+	}
+
+	static exists (key) {
+		return new Promise((resolve, reject) => {
+			RedisUtil.client.exists(key, (err, rtn) => {
+				if (err) return reject(err)
+				resolve(rtn)
+			})
+		})
+	}
+
+	static expire (key, ttl) {
+		return new Promise((resolve, reject) => {
+			RedisUtil.client.expire(key, ttl, (err, rtn) => {
 				if (err) return reject(err)
 				resolve(rtn)
 			})
@@ -76,4 +109,4 @@ class redisUtil {
 	}
 }
 
-module.exports = redisUtil
+module.exports = RedisUtil

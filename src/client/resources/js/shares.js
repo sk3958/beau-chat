@@ -30,7 +30,9 @@ Vue.component('shares', {
 				</div>
 				<div id="message_box">
 					<input id="chat_input" type="text" v-on:keyup.enter="sendMessage">
-					<button id="send" type="button" v-on:click="sendMessage">send</button>
+					<button id="send" type="button" v-on:click="sendMessage">
+						<i class="fas fa-paper-plane"></i>
+					</button>
 					<button id="file" type="button" v-on:click="openSendFileSelector">file</button>
 					<input type="file" id="file_file" v-on:change="sendFile">
 				</div>

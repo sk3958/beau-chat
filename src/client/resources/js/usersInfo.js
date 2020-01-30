@@ -1,6 +1,5 @@
 Vue.component('users-info', {
   props: {
-    socket: Object,
     users: Object,
     user_count: Number,
     on_waiting: Number,
@@ -35,7 +34,7 @@ Vue.component('users-info', {
 
   methods: {
     inviteRoom(userId) {
-      this.socket.emit('inviteRoom', JSON.stringify({ invitedId: userId }))
+      this.$emit('socket', 'inviteRoom', { invitedId: userId })
 			this.$emit('show_message', 'inviteRoom', 'Notification', 'Has sent the request.')
     }
   }

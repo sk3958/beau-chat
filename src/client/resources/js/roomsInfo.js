@@ -1,12 +1,10 @@
 Vue.component('rooms-info', {
   props: {
-    socket: Object,
     rooms: Object,
     room_count: Number,
 		my_id: String,
     my_status: String,
 		room_maxs: Array,
-		log: Function,
 		dummy: Number
   },
   data: function () {
@@ -57,11 +55,15 @@ Vue.component('rooms-info', {
 
   methods: {
     createRoom () {
-      this.socket.emit('createRoom', JSON.stringify({ roomName: this.room_name, roomDesc: this.room_desc, maxUser: this.max_user }))
+      this.socket('createRoom', { roomName: this.room_name, roomDesc: this.room_desc, maxUser: this.max_user })
     },
 
     enterRoom (roomId) {
-      this.socket.emit('enterRoom', JSON.stringify({ userId: this.my_id, roomId: roomId }))
-    }
+      this.socket('enterRoom', { userId: this.my_id, roomId: roomId })
+    },
+
+		socket (message, data) {
+			this.$emit('socket', message, data)
+		}
   }
 })
